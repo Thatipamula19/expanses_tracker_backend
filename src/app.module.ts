@@ -16,8 +16,10 @@ import databaseConfig from './config/database.config';
 import envValidation from './config/env.validation';
 import { JwtModule } from '@nestjs/jwt';
 import authConfig from '@/auth/config/auth.config';
+import { PaginationModule } from './common/pagination/pagination.module';
 @Module({
   imports: [UsersModule, CategoriesModule, TransactionsModule, BudgetsModule, GoalsModule, AuthModule,
+    PaginationModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ENV ? `.env.${ENV.trim()}` : '.env',
@@ -36,7 +38,8 @@ import authConfig from '@/auth/config/auth.config';
           password: String(configService.get('database.password')),
           database: configService.get('database.name'),
           autoLoadEntities: configService.get('database.autoLoadEntities'),
-          synchronize: configService.get('database.synchronize'),
+          entities: [__dirname + '/**/*.entity{.ts,.js}'],
+          synchronize: true,
         };
       },
     }),

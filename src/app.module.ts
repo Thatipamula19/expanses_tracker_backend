@@ -52,9 +52,9 @@ import { AuthorizeGuard } from './auth/guards/authorize.guard';
   ],
   controllers: [AppController],
   providers: [AppService,
-        {
+    {
       provide: APP_GUARD,
-      useClass: AuthorizeGuard
+      useClass: AuthorizeGuard,
     }
   ],
 })

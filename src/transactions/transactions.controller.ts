@@ -4,7 +4,6 @@ import { AddTransactionDto } from './dtos/add-transaction.dto';
 import { ActiveUser } from '@/auth/decorators/active-user.decorator';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { UpdateTransactionDto } from './dtos/update-transaction.dto';
-import { PaginationQueryDto } from '@/common/pagination/dto/pagination-query.dto';
 import { GetTransactionsDto } from './dtos/get-transactions.dto';
 
 @ApiBearerAuth("access-token")

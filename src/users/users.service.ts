@@ -78,23 +78,11 @@ export class UsersService {
 
             throw error;
         }
-
-        // const user = await this.userRepository.findOne({
-        //     where : {email: userDto.email}
-        // });
-
-        // if(user){
-        //     return "user is registered already!";
-        // }
-
-        // let newUser = this.userRepository.create(userDto);
-        // newUser = await this.userRepository.save(newUser);
-        // return newUser;
     }
 
     public async findOneByEmail(email: string): Promise<User | undefined> {
         try {
-            const user = await this.userRepository.findOne({ where: { email }, select: ['id', 'email', 'password'] });
+            const user = await this.userRepository.findOne({ where: { email }, select: ['id', 'email', 'password', 'role'] });
             if (!user) {
                 throw new HttpException({
                     status: HttpStatus.NOT_FOUND,

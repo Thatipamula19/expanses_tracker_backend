@@ -33,7 +33,6 @@ export class AuthService {
 
     public async login(email: string, password: string) {
         const user = await this.userService.findOneByEmail(email);
-
         if (!user) {
             throw new UnauthorizedException('Invalid credentials');
         }
@@ -210,7 +209,7 @@ export class AuthService {
             this.signToken<Partial<ActiveUserType>>(
                 String(user.id),
                 this.authConfiguration.expiresIn,
-                { email: user.email },
+                { email: user.email, role: user.role },
             ),
             this.signToken(
                 String(user.id),

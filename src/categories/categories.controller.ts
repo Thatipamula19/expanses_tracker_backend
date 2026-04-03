@@ -1,11 +1,15 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Put } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Put, UseGuards } from '@nestjs/common';
 import { CategoriesService } from './categories.service';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { AddCategoryDto } from './dtos/add-category.dto';
 import { UpdateCategoryDto } from './dtos/update-category.dto';
-
+import { RolesGuard } from '@/auth/guards/roles.guard';
+import { UserRole } from '@/common/enums';
+import { Roles } from '@/auth/decorators/roles.decorator';
 @ApiBearerAuth("access-token")
 @Controller('categories')
+@UseGuards(RolesGuard)  // ← apply both guards at controller level
+@Roles(UserRole.ADMIN) 
 export class CategoriesController {
     constructor(private readonly categoriesService: CategoriesService) { }
 

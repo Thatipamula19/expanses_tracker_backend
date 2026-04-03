@@ -2,11 +2,12 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { AddTransactionDto } from './dtos/add-transaction.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Transaction } from './entities/transaction.entity';
-import { Repository } from 'typeorm';
+import { Between, FindOptionsOrder, FindOptionsWhere, ILike, In, Repository } from 'typeorm';
 import { UpdateTransactionDto } from './dtos/update-transaction.dto';
 import { DeleteTransactionDto } from './dtos/delete-transaction.dto';
 import { PaginationProvider } from '@/common/pagination/pagination.provider';
-import { PaginationQueryDto } from '@/common/pagination/dto/pagination-query.dto';
+import { GetTransactionsDto } from './dtos/get-transactions.dto';
+import { DateRangePeriod, SortOrder } from '@/common/enums';
 
 @Injectable()
 export class TransactionsService {
@@ -17,22 +18,74 @@ export class TransactionsService {
         private readonly paginateService: PaginationProvider,
     ) { }
 
-    public async getTransactions(user_id: string, pageQueryDto: PaginationQueryDto) {
+    public async getTransactions(user_id: string, getTransactionsDto: GetTransactionsDto) {
         try {
+            const {
+                period,
+                categories,
+                transaction_type,
+                sort = SortOrder.DESC,
+                search,
+            } = getTransactionsDto;
+
+            const baseWhere: FindOptionsWhere<Transaction> = {
+                user: { id: user_id },
+            };
+
+            if (period) {
+                const { start, end } = this.resolveDateRange(period);
+                baseWhere.transaction_date = Between(start, end);
+            }
+
+            if (transaction_type) {
+                baseWhere.type = transaction_type;
+            }
+
+            let whereConditions: FindOptionsWhere<Transaction> | FindOptionsWhere<Transaction>[];
+
+            if (search) {
+                whereConditions = [
+                    { ...baseWhere, title: ILike(`%${search}%`) },
+                    { ...baseWhere, category: { name: ILike(`%${search}%`) } },
+                ];
+
+                if (categories?.length) {
+                    whereConditions = [
+                        { ...baseWhere, title: ILike(`%${search}%`), category: { name: In(categories) } },
+                        { ...baseWhere, category: { name: ILike(`%${search}%`) } },
+                    ];
+                }
+            } else {
+                if (categories?.length) {
+                    baseWhere.category = { name: In(categories) };
+                }
+                whereConditions = baseWhere;
+            }
+
+            const order: FindOptionsOrder<Transaction> = {
+                transaction_date: sort.toUpperCase() as 'ASC' | 'DESC',
+            };
+
             const transactions = await this.paginateService.paginateQuery(
-                pageQueryDto, 
+                getTransactionsDto,                  // carries page + limit
                 this.transactionRepository,
-                { user: true, category: true },
-                { user_id }
+                { user: true, category: true },      // relations
+                whereConditions as FindOptionsWhere<Transaction>,                     // dynamic where
+                order,                               // dynamic sort
             );
+
             return {
                 message: 'Transactions retrieved successfully',
-                transactions: transactions,
+                transactions,
             };
+
         } catch (error) {
-            throw new InternalServerErrorException(error?.message ?? 'Failed to retrieve transactions');
+            throw new InternalServerErrorException(
+                error?.message ?? 'Failed to retrieve transactions',
+            );
         }
     }
+
 
     public async getTransaction(transaction_id: string, user_id: string) {
         try {
@@ -94,6 +147,46 @@ export class TransactionsService {
         } catch (error) {
             throw new InternalServerErrorException(error?.message ?? 'Failed to delete transaction');
         }
+    }
+
+    private resolveDateRange(period: DateRangePeriod): { start: Date; end: Date } {
+        const now = new Date();
+        const start = new Date();
+        const end = new Date();
+
+        switch (period) {
+            case DateRangePeriod.TODAY:
+                start.setHours(0, 0, 0, 0);
+                end.setHours(23, 59, 59, 999);
+                break;
+
+            case DateRangePeriod.THIS_WEEK:
+                start.setDate(now.getDate() - now.getDay());
+                start.setHours(0, 0, 0, 0);
+                end.setHours(23, 59, 59, 999);
+                break;
+
+            case DateRangePeriod.THIS_MONTH:
+                start.setDate(1);
+                start.setHours(0, 0, 0, 0);
+                end.setHours(23, 59, 59, 999);
+                break;
+
+            case DateRangePeriod.LAST_MONTH:
+                start.setMonth(now.getMonth() - 1, 1);
+                start.setHours(0, 0, 0, 0);
+                end.setMonth(now.getMonth(), 0);
+                end.setHours(23, 59, 59, 999);
+                break;
+
+            case DateRangePeriod.LAST_3_MONTHS:
+                start.setMonth(now.getMonth() - 3, 1);
+                start.setHours(0, 0, 0, 0);
+                end.setHours(23, 59, 59, 999);
+                break;
+        }
+
+        return { start, end };
     }
 
 }

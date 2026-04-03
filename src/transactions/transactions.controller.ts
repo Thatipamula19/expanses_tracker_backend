@@ -5,6 +5,7 @@ import { ActiveUser } from '@/auth/decorators/active-user.decorator';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { UpdateTransactionDto } from './dtos/update-transaction.dto';
 import { PaginationQueryDto } from '@/common/pagination/dto/pagination-query.dto';
+import { GetTransactionsDto } from './dtos/get-transactions.dto';
 
 @ApiBearerAuth("access-token")
 @Controller('transactions')
@@ -12,10 +13,10 @@ export class TransactionsController {
     constructor(private readonly transactionsService: TransactionsService) { }
 
 
-    @Get()
+    @Post('/get-filter-transactions')
     @HttpCode(HttpStatus.OK)
-    async getTransactions(@ActiveUser('sub') user_id: string, @Query() pageQueryDto: PaginationQueryDto) {
-        return await this.transactionsService.getTransactions(user_id, pageQueryDto);
+    async getTransactions(@ActiveUser('sub') user_id: string, @Body() getTransactionsDto: GetTransactionsDto) {
+        return await this.transactionsService.getTransactions(user_id, getTransactionsDto);
     }
 
     @Get('/get-transaction/:transaction_id')

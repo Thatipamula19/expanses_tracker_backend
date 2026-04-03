@@ -10,7 +10,6 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
 } from 'typeorm';
-import { CategoryType } from '@/common/enums';
 import { User } from '@/users/entities/user.entity';
 import { Transaction } from '@/transactions/entities/transaction.entity';
 import { Budget } from '@/budgets/entities/budget.entity';
@@ -25,12 +24,6 @@ export class Category {
   @Column({ type: 'varchar', length: 100 })
   name: string;
 
-  @Column({
-    type: 'enum',
-    enum: CategoryType,
-    default: CategoryType.EXPENSE,
-  })
-  type: CategoryType;
 
   @Column({ type: 'boolean', default: false })
   is_default: boolean;

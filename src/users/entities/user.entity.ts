@@ -12,6 +12,7 @@ import { Category } from '@/categories/entities/category.entity';
 import { Budget } from '@/budgets/entities/budget.entity';
 import { Goal } from '@/goals/entities/goal.entity';
 import { RefreshToken } from '@/auth/entities/refresh-token.entity';
+import { UserRole } from '@/common/enums';
 
 @Entity('users')
 export class User {
@@ -29,6 +30,9 @@ export class User {
 
   @Column({ type: 'varchar', length: 500, nullable: true })
   avatar_url: string;
+
+  @Column({ type: 'varchar', length: 10, default: UserRole.USER })
+  role: UserRole;
 
   @Column({ type: 'varchar', length: 10, default: 'INR' })
   preferred_currency: string;

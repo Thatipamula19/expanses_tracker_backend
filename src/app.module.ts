@@ -17,6 +17,7 @@ import envValidation from './config/env.validation';
 import { JwtModule } from '@nestjs/jwt';
 import authConfig from '@/auth/config/auth.config';
 import { PaginationModule } from './common/pagination/pagination.module';
+import { MailModule } from './mail/mail.module';
 @Module({
   imports: [UsersModule, CategoriesModule, TransactionsModule, BudgetsModule, GoalsModule, AuthModule,
     PaginationModule,
@@ -45,6 +46,7 @@ import { PaginationModule } from './common/pagination/pagination.module';
     }),
     ConfigModule.forFeature(authConfig),
     JwtModule.registerAsync(authConfig.asProvider()),
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService],

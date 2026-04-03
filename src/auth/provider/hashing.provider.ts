@@ -8,4 +8,9 @@ export abstract class HashingProvider {
         plainPassword: string | Buffer,
         hashPassword: string | Buffer
     ): Promise<Boolean>;
+
+    abstract compareToken(
+        token: string | Buffer,
+        hashToken: string | Buffer
+    ): Promise<Boolean>;
 }

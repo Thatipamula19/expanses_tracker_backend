@@ -4,6 +4,8 @@ import { AuthService } from './auth.service';
 import { CreateUserDto } from '@/users/dtos/create-user.dto';
 import { AllowAnonymous } from './decorators/allow-anonaymous.decorator';
 import { RefreshTokenDto } from './dtos/refresh-token.dto';
+import { ForgetPasswordDto } from './dtos/forgot-password.dto';
+import { ResetPasswordDto } from './dtos/reset-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -28,5 +30,19 @@ export class AuthController {
     @Post('refresh-token')
     async refreshToken(@Body() refreshTokenDto: RefreshTokenDto) {
         return await this.authService.refreshToken(refreshTokenDto);
+    }
+
+    @AllowAnonymous()
+    @HttpCode(HttpStatus.OK)
+    @Post('forgot-password')
+    async forgotPassword(@Body() forgetPasswordDto: ForgetPasswordDto) {
+        return await this.authService.forgotPassword(forgetPasswordDto);
+    }
+
+    @AllowAnonymous()
+    @HttpCode(HttpStatus.OK)
+    @Post('reset-password')
+    async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+        return await this.authService.resetPassword(resetPasswordDto);
     }
 }

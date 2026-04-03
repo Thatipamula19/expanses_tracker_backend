@@ -14,4 +14,8 @@ export class BcryptProvider implements HashingProvider {
     public async comparePassword(plainPassword: string | Buffer, hashPassword: string | Buffer): Promise<Boolean> {
         return await bcrypt.compare(plainPassword, hashPassword)
     }
+
+    public async compareToken(token: string | Buffer, hashToken: string | Buffer): Promise<Boolean> {
+        return await bcrypt.compare(token, hashToken)
+    }
 }

@@ -34,7 +34,6 @@ export class Transaction {
   @Column({ type: 'text', nullable: true })
   description: string;
 
-  // Always stored as a positive decimal; type field determines income/expense
   @Column({ type: 'decimal', precision: 15, scale: 2 })
   amount: number;
 

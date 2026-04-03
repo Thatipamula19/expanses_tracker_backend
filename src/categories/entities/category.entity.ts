@@ -17,22 +17,13 @@ import { Budget } from '@/budgets/entities/budget.entity';
 import { Goal } from '@/goals/entities/goal.entity';
 
 @Entity('categories')
-@Index(['user_id', 'name'], { unique: true, where: '"deleted_at" IS NULL' })
+@Index(['name'], { unique: true, where: '"deleted_at" IS NULL' })
 export class Category {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'uuid', nullable: true })
-  user_id: string;
-
   @Column({ type: 'varchar', length: 100 })
   name: string;
-
-  @Column({ type: 'varchar', length: 100, nullable: true })
-  icon: string;
-
-  @Column({ type: 'varchar', length: 20, nullable: true })
-  color: string;
 
   @Column({
     type: 'enum',

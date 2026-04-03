@@ -43,7 +43,13 @@ export class AuthService {
             throw new UnauthorizedException('Invalid credentials');
         }
 
-        return this.generateToken(user);
+        return  {
+            ...(await this.generateToken(user)),
+            user_id: user.id,
+            user_name: user.user_name,
+            email: user.email,
+            message: 'Login successful',
+        };
     }
 
     public async createUser(createUserDto: CreateUserDto) {

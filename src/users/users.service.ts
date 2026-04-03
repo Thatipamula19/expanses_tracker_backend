@@ -59,7 +59,14 @@ export class UsersService {
                 password: await this.hashProvider.hashPassword(userDto.password)
             });
 
-            return await this.userRepository.save(user);
+            const newUser = await this.userRepository.save(user);
+
+            return {
+                message: 'User created successfully',
+                user_id: newUser.id,
+                user_name: newUser.user_name,
+                email: newUser.email,
+            }
 
         } catch (error) {
             console.log('error', error);

@@ -1,6 +1,6 @@
 import { TransactionType } from "@/common/enums";
 import { ApiProperty } from "@nestjs/swagger";
-import { IsEnum, IsNotEmpty, IsNumber, IsString } from "class-validator";
+import { IsDate, IsEnum, IsNotEmpty, IsNumber, IsString } from "class-validator";
 export class UpdateTransactionDto {
 
     @ApiProperty({ description: 'Transaction ID' })
@@ -32,4 +32,10 @@ export class UpdateTransactionDto {
     @IsNotEmpty({ message: 'Type is required' })
     @IsEnum(TransactionType, { message: 'Type must be a valid transaction type' })
     type: TransactionType;
+
+    @ApiProperty({ description: 'Transaction Date' })
+    @IsNotEmpty({ message: 'Transaction Date is required' })
+    @IsString({ message: 'Transaction Date must be a string' })
+    @IsDate({ message: 'Transaction Date must be a valid date' })
+    transaction_date: Date;
 }

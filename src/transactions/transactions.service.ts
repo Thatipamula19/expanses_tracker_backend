@@ -34,6 +34,27 @@ export class TransactionsService {
         }
     }
 
+    public async getTransaction(transaction_id: string, user_id: string) {
+        try {
+            const transaction = await this.transactionRepository.findOne({
+                where: {
+                    id: transaction_id,
+                    user_id,
+                },
+                relations: { user: true, category: true },
+            });
+            if (!transaction) {
+                throw new InternalServerErrorException('Transaction not found');
+            }
+            return {
+                message: 'Transaction retrieved successfully',
+                transaction: transaction,
+            };
+        } catch (error) {
+            throw new InternalServerErrorException(error?.message ?? 'Failed to retrieve transaction');
+        }
+    }
+
     public async addTransaction(transaction: AddTransactionDto, user_id: string) {
         try {
             const newTransaction = await this.transactionRepository.save({

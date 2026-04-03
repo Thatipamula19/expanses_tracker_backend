@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Put, Query } from '@nestjs/common';
 import { TransactionsService } from './transactions.service';
 import { AddTransactionDto } from './dtos/add-transaction.dto';
 import { ActiveUser } from '@/auth/decorators/active-user.decorator';
@@ -16,6 +16,12 @@ export class TransactionsController {
     @HttpCode(HttpStatus.OK)
     async getTransactions(@ActiveUser('sub') user_id: string, @Query() pageQueryDto: PaginationQueryDto) {
         return await this.transactionsService.getTransactions(user_id, pageQueryDto);
+    }
+
+    @Get('/get-transaction/:transaction_id')
+    @HttpCode(HttpStatus.OK)
+    async getTransaction(@Param('transaction_id') transaction_id: string, @ActiveUser('sub') user_id: string) {
+        return await this.transactionsService.getTransaction(transaction_id, user_id);
     }
 
     @Post('/add-transaction')

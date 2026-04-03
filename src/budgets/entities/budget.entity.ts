@@ -12,7 +12,6 @@ import { User } from '@/users/entities/user.entity';
 import { Category } from '@/categories/entities/category.entity';
 
 @Entity('budgets')
-// One budget per user + category + period
 @Index(['user_id', 'category_id', 'period_month'], { unique: true })
 export class Budget {
   @PrimaryGeneratedColumn('uuid')
@@ -27,11 +26,9 @@ export class Budget {
   @Column({ type: 'decimal', precision: 15, scale: 2 })
   limit_amount: number;
 
-  // Denormalized — updated via service whenever a transaction is mutated
   @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
   spent_amount: number;
 
-  // Format: 'YYYY-MM' e.g. '2025-10' — easy to filter and sort
   @Column({ type: 'varchar', length: 7 })
   period_month: string;
 
@@ -44,7 +41,6 @@ export class Budget {
   @UpdateDateColumn({ type: 'timestamptz' })
   updated_at: Date;
 
-  // Virtual getters (computed at runtime, not stored in DB)
   get remaining_amount(): number {
     return Number(this.limit_amount) - Number(this.spent_amount);
   }

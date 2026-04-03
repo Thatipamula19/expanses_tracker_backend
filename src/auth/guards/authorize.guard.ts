@@ -1,7 +1,6 @@
 import { CanActivate, ExecutionContext, Inject, Injectable, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { Request } from "express";
-import { Observable } from "rxjs";
 import authConfig from "../config/auth.config";
 import type { ConfigType } from "@nestjs/config";
 import { Reflector } from "@nestjs/core";

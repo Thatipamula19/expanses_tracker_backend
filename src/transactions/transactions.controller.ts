@@ -11,6 +11,11 @@ import { GetTransactionsDto } from './dtos/get-transactions.dto';
 export class TransactionsController {
     constructor(private readonly transactionsService: TransactionsService) { }
 
+    @Get('/get-statistics')
+    @HttpCode(HttpStatus.OK)
+    async getStatistics(@ActiveUser('sub') user_id: string) {
+        return await this.transactionsService.getStatistics(user_id);
+    }
 
     @Post('/get-filter-transactions')
     @HttpCode(HttpStatus.OK)

@@ -7,7 +7,7 @@ import { UpdateTransactionDto } from './dtos/update-transaction.dto';
 import { DeleteTransactionDto } from './dtos/delete-transaction.dto';
 import { PaginationProvider } from '@/common/pagination/pagination.provider';
 import { GetTransactionsDto } from './dtos/get-transactions.dto';
-import { DateRangePeriod, SortOrder } from '@/common/enums';
+import { DateRangePeriod, SortOrder, TransactionType } from '@/common/enums';
 
 @Injectable()
 export class TransactionsService {
@@ -17,6 +17,88 @@ export class TransactionsService {
         private readonly transactionRepository: Repository<Transaction>,
         private readonly paginateService: PaginationProvider,
     ) { }
+
+public async getStatistics(user_id: string) {
+    try {
+        const now = new Date();
+
+        const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const currentMonthEnd   = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
+        const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const lastMonthEnd   = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+
+        const [currentMonthTxns, lastMonthTxns] = await Promise.all([
+            this.transactionRepository.find({
+                where: {
+                    user_id,
+                    transaction_date: Between(currentMonthStart, currentMonthEnd),
+                },
+            }),
+            this.transactionRepository.find({
+                where: {
+                    user_id,
+                    transaction_date: Between(lastMonthStart, lastMonthEnd),
+                },
+            }),
+        ]);
+
+        const aggregate = (txns: Transaction[]) => {
+            const income  = txns
+                .filter(t => t.type === TransactionType.INCOME)
+                .reduce((sum, t) => sum + Number(t.amount), 0);
+
+            const expense = txns
+                .filter(t => t.type === TransactionType.EXPENSE)
+                .reduce((sum, t) => sum + Number(t.amount), 0);
+
+            return { income, expense, balance: income - expense };
+        };
+
+        const percentageChange = (current: number, previous: number): number => {
+            if (previous === 0) return current > 0 ? 100 : 0;
+            return Math.round(((current - previous) / previous) * 1000) / 10;
+        };
+
+        const current  = aggregate(currentMonthTxns);
+        const previous = aggregate(lastMonthTxns);
+
+        const incomeChange  = percentageChange(current.income,  previous.income);
+        const expenseChange = percentageChange(current.expense, previous.expense);
+        const balanceChange = percentageChange(current.balance, previous.balance);
+
+        const currentSavingsRate  = current.income  > 0 ? Math.round((current.balance  / current.income)  * 100) : 0;
+        const previousSavingsRate = previous.income > 0 ? Math.round((previous.balance / previous.income) * 100) : 0;
+        const savingsRateChange   = percentageChange(currentSavingsRate, previousSavingsRate);
+
+        return {
+            total_balance: {
+                amount: current.balance,
+                change_amount: current.balance - previous.balance,
+                change_percentage: balanceChange,                  
+                trend: balanceChange >= 0 ? 'up' : 'down',
+            },
+            total_income: {
+                amount: current.income,
+                change_percentage: incomeChange,
+                trend: incomeChange >= 0 ? 'up' : 'down',
+            },
+            total_expense: {
+                amount: current.expense,
+                change_percentage: expenseChange,
+                trend: expenseChange <= 0 ? 'up' : 'down',
+            },
+            savings_rate: {
+                percentage: currentSavingsRate,
+                change_percentage: savingsRateChange,
+                trend: savingsRateChange >= 0 ? 'up' : 'down',
+            },
+        };
+
+    } catch (error) {
+        throw new InternalServerErrorException('Failed to get transactions statistics');
+    }
+}
 
     public async getTransactions(user_id: string, getTransactionsDto: GetTransactionsDto) {
         try {

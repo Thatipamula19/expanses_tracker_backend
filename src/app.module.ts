@@ -20,6 +20,7 @@ import { PaginationModule } from './common/pagination/pagination.module';
 import { MailModule } from './mail/mail.module';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthorizeGuard } from './auth/guards/authorize.guard';
+import { AnalyticsModule } from './analytics/analytics.module';
 @Module({
   imports: [UsersModule, CategoriesModule, TransactionsModule, BudgetsModule, GoalsModule, AuthModule,
     PaginationModule,
@@ -49,6 +50,7 @@ import { AuthorizeGuard } from './auth/guards/authorize.guard';
     ConfigModule.forFeature(authConfig),
     JwtModule.registerAsync(authConfig.asProvider()),
     MailModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [AppService,

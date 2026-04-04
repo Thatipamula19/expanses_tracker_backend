@@ -6,6 +6,7 @@ import { AllowAnonymous } from './decorators/allow-anonaymous.decorator';
 import { RefreshTokenDto } from './dtos/refresh-token.dto';
 import { ForgetPasswordDto } from './dtos/forgot-password.dto';
 import { ResetPasswordDto } from './dtos/reset-password.dto';
+import { ApiOperation } from '@nestjs/swagger';
 
 @Controller('auth')
 export class AuthController {
@@ -14,6 +15,7 @@ export class AuthController {
     @AllowAnonymous()
     @HttpCode(HttpStatus.OK)
     @Post('login')
+    @ApiOperation({ summary: 'Login user' })
      async login(@Body() loginDto: LoginDto) {
         return await this.authService.login(loginDto.email, loginDto.password);
     }
@@ -21,6 +23,7 @@ export class AuthController {
     @AllowAnonymous()
     @HttpCode(201)
     @Post('create')
+    @ApiOperation({ summary: 'Create user' })
     async createUser(@Body() createUserDto: CreateUserDto) {
         return await this.authService.createUser(createUserDto);
     }
@@ -28,6 +31,7 @@ export class AuthController {
     @AllowAnonymous()
     @HttpCode(HttpStatus.OK)
     @Post('refresh-token')
+    @ApiOperation({ summary: 'Refresh token' })
     async refreshToken(@Body() refreshTokenDto: RefreshTokenDto) {
         return await this.authService.refreshToken(refreshTokenDto);
     }
@@ -35,6 +39,7 @@ export class AuthController {
     @AllowAnonymous()
     @HttpCode(HttpStatus.OK)
     @Post('forgot-password')
+    @ApiOperation({ summary: 'Forgot password' })
     async forgotPassword(@Body() forgetPasswordDto: ForgetPasswordDto) {
         return await this.authService.forgotPassword(forgetPasswordDto);
     }
@@ -42,6 +47,7 @@ export class AuthController {
     @AllowAnonymous()
     @HttpCode(HttpStatus.OK)
     @Post('reset-password')
+    @ApiOperation({ summary: 'Reset password' })
     async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
         return await this.authService.resetPassword(resetPasswordDto);
     }

@@ -9,10 +9,21 @@ async function bootstrap() {
     .setTitle('Expanses Tracker')
     .setDescription('The expenses tracker API description')
     .setVersion('1.0')
-    .addTag('expenses')
+    .addBearerAuth({
+      type: 'http',
+      scheme: 'bearer',
+      bearerFormat: 'JWT',
+      in: 'header',
+      name: 'Authorization',
+    },
+      'access-token',)
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, documentFactory);
+  SwaggerModule.setup('docs', app, documentFactory, {
+    swaggerOptions: {
+      persistAuthorization: true
+    }
+  });
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
     forbidNonWhitelisted: true,

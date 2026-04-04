@@ -12,27 +12,28 @@ export class AuthorizeGuard implements CanActivate {
         @Inject(authConfig.KEY)
         private readonly authConfiguration: ConfigType<typeof authConfig>,
         private readonly reflector: Reflector
-    ){}
-    async canActivate(context: ExecutionContext): Promise<boolean>{
+    ) { }
+    async canActivate(context: ExecutionContext): Promise<boolean> {
         const isPublic = this.reflector.getAllAndOverride('isPublic', [
             context.getHandler(),
             context.getClass()
         ])
 
-        if(isPublic) return true;
+        if (isPublic) return true;
 
         const request: Request = context.switchToHttp().getRequest();
 
         const token = request.headers.authorization?.split(' ')[1];
-
-        if(!token){
+        if (!token) {
             throw new UnauthorizedException()
         }
 
         try {
-            const payload = await this.jwtService.verifyAsync(token, this.authConfiguration);
+            const payload = await this.jwtService.verifyAsync(token, {
+                secret: this.authConfiguration.secret
+            });
             request[REQUEST_USER_KEY] = payload;
-        } catch(error){
+        } catch (error) {
             throw new UnauthorizedException()
         }
 

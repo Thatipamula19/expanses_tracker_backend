@@ -34,3 +34,10 @@ export enum SortOrder {
     ASC = 'asc',
     DESC = 'desc',
 }
+
+export enum OverviewPeriod {
+    THIS_MONTH = '1',
+    LAST_3_MONTHS = '3',
+    LAST_6_MONTHS = '6',
+    LAST_12_MONTHS = '12',
+}

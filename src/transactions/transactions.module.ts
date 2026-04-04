@@ -5,11 +5,13 @@ import { PaginationModule } from '@/common/pagination/pagination.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Transaction } from './entities/transaction.entity';
 import { CategoriesModule } from '@/categories/categories.module';
+import { BudgetsModule } from '@/budgets/budgets.module';
+import { Budget } from '@/budgets/entities/budget.entity';
 
 @Module({
   controllers: [TransactionsController],
   providers: [TransactionsService],
-  imports: [PaginationModule, CategoriesModule, TypeOrmModule.forFeature([Transaction])],
+  imports: [PaginationModule, CategoriesModule, TypeOrmModule.forFeature([Transaction, Budget]), BudgetsModule],
   exports: [TransactionsService],
   
 })

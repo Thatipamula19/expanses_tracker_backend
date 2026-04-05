@@ -21,6 +21,8 @@ import { MailModule } from './mail/mail.module';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthorizeGuard } from './auth/guards/authorize.guard';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { CacheModule } from '@nestjs/cache-manager';
+import * as redisStore from 'cache-manager-redis-store';
 @Module({
   imports: [
     UsersModule,
@@ -66,6 +68,14 @@ import { AnalyticsModule } from './analytics/analytics.module';
     JwtModule.registerAsync(authConfig.asProvider()),
     MailModule,
     AnalyticsModule,
+    CacheModule.register({
+      isGlobal: true,
+      store: redisStore,
+      host: process.env.REDIS_HOST || 'localhost',
+      port: process.env.REDIS_PORT || 6379,
+      password: process.env.REDIS_PASSWORD || undefined,
+      ttl: 60, // seconds — default cache lifetime
+    })
   ],
   controllers: [AppController],
   providers: [

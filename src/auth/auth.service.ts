@@ -1,4 +1,11 @@
-import { BadRequestException, forwardRef, Inject, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  forwardRef,
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import authConfig from './config/auth.config';
 import { HashingProvider } from './provider/hashing.provider';
 import { JwtService } from '@nestjs/jwt';
@@ -18,232 +25,252 @@ import { MailService } from '@/mail/mail.service';
 import { ChangePasswordDto } from './dtos/change-password.dto';
 @Injectable()
 export class AuthService {
-    constructor(@Inject(forwardRef(() => UsersService)) private readonly userService: UsersService,
-        @Inject(authConfig.KEY) private readonly authConfiguration: ConfigType<typeof authConfig>,
-        private readonly hashingProvider: HashingProvider,
-        private readonly jwtService: JwtService,
-        private readonly mailService: MailService,
-        @InjectRepository(User)
-        private readonly userRepository: Repository<User>,
+  constructor(
+    @Inject(forwardRef(() => UsersService))
+    private readonly userService: UsersService,
+    @Inject(authConfig.KEY)
+    private readonly authConfiguration: ConfigType<typeof authConfig>,
+    private readonly hashingProvider: HashingProvider,
+    private readonly jwtService: JwtService,
+    private readonly mailService: MailService,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
 
-        @InjectRepository(PasswordResetToken)
-        private readonly passwordResetTokenRepository: Repository<PasswordResetToken>
-    ) { }
+    @InjectRepository(PasswordResetToken)
+    private readonly passwordResetTokenRepository: Repository<PasswordResetToken>,
+  ) {}
 
-    isAuthenticated: boolean = false;
+  isAuthenticated: boolean = false;
 
-    public async login(email: string, password: string) {
-        const user = await this.userService.findOneByEmail(email);
-        if (!user) {
-            throw new UnauthorizedException('Invalid credentials');
-        }
-
-        const isPasswordValid = await this.hashingProvider.comparePassword(password, user.password);
-        if (!isPasswordValid) {
-            throw new UnauthorizedException('Invalid credentials');
-        }
-
-        return {
-            ...(await this.generateToken(user)),
-            user_id: user.id,
-            user_name: user.user_name,
-            email: user.email,
-            message: 'Login successful',
-        };
+  public async login(email: string, password: string) {
+    const user = await this.userService.findOneByEmail(email);
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
     }
 
-    public async createUser(createUserDto: CreateUserDto) {
-        return await this.userService.createUser(createUserDto);
+    const isPasswordValid = await this.hashingProvider.comparePassword(
+      password,
+      user.password,
+    );
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid credentials');
     }
 
-    public async refreshToken(refreshTokenDto: RefreshTokenDto) {
-        try {
-            const { sub } = await this.jwtService.verifyAsync(
-                refreshTokenDto?.refresh_token,
-                {
-                    secret: this.authConfiguration.secret,
-                    audience: this.authConfiguration.audience,
-                    issuer: this.authConfiguration.issuer,
-                },
-            );
+    return {
+      ...(await this.generateToken(user)),
+      user_id: user.id,
+      user_name: user.user_name,
+      email: user.email,
+      message: 'Login successful',
+    };
+  }
 
-            const user = await this.userService.findOneById(Number(sub));
-            if (!user) {
-                throw new UnauthorizedException('User not found');
-            }
+  public async createUser(createUserDto: CreateUserDto) {
+    return await this.userService.createUser(createUserDto);
+  }
 
-            return await this.generateToken(user);
+  public async refreshToken(refreshTokenDto: RefreshTokenDto) {
+    try {
+      const { sub } = await this.jwtService.verifyAsync(
+        refreshTokenDto?.refresh_token,
+        {
+          secret: this.authConfiguration.secret,
+          audience: this.authConfiguration.audience,
+          issuer: this.authConfiguration.issuer,
+        },
+      );
 
-        } catch (error) {
-            throw new UnauthorizedException(error?.message ?? 'Invalid refresh token');
-        }
+      const user = await this.userService.findOneById(Number(sub));
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      return await this.generateToken(user);
+    } catch (error) {
+      throw new UnauthorizedException(
+        error?.message ?? 'Invalid refresh token',
+      );
+    }
+  }
+
+  public async forgotPassword(forgetPasswordDto: ForgetPasswordDto) {
+    const { email } = forgetPasswordDto;
+
+    const user = await this.userRepository.findOne({ where: { email } });
+
+    if (!user) {
+      throw new UnauthorizedException(`User with email ${email} not found`);
     }
 
+    await this.passwordResetTokenRepository.update(
+      { user_id: user.id, used: false },
+      { used: true },
+    );
 
-    public async forgotPassword(forgetPasswordDto: ForgetPasswordDto) {
-        const { email } = forgetPasswordDto;
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      purpose: PASSWORD_RESET,
+    };
 
-        const user = await this.userRepository.findOne({ where: { email } });
+    const rawToken = await this.jwtService.signAsync(payload, {
+      secret: process.env.PASSWORD_RESET_SECRET,
+      expiresIn: '15m',
+    });
 
-        if (!user) {
-            throw new UnauthorizedException(`User with email ${email} not found`);
-        }
+    const tokenHash = await this.hashingProvider.hashPassword(rawToken);
 
-        await this.passwordResetTokenRepository.update(
-            { user_id: user.id, used: false },
-            { used: true },
-        );
+    await this.passwordResetTokenRepository.save({
+      user_id: user.id,
+      token_hash: tokenHash,
+      expires_at: new Date(Date.now() + 15 * 60 * 1000),
+      used: false,
+    });
 
-        const payload = {
-            sub: user.id,
-            email: user.email,
-            purpose: PASSWORD_RESET,
-        };
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${encodeURIComponent(rawToken)}`;
 
-        const rawToken = await this.jwtService.signAsync(payload, {
-            secret: process.env.PASSWORD_RESET_SECRET,
-            expiresIn: '15m',
-        });
+    await this.mailService.sendPasswordResetMail(
+      user.email,
+      user.user_name ?? 'there',
+      resetLink,
+    );
 
-        const tokenHash = await this.hashingProvider.hashPassword(rawToken);
+    return { message: 'If the email exists, a reset link has been sent.' };
+  }
 
-        await this.passwordResetTokenRepository.save({
-            user_id: user.id,
-            token_hash: tokenHash,
-            expires_at: new Date(Date.now() + 15 * 60 * 1000),
-            used: false,
-        });
+  public async resetPassword(resetPasswordDto: ResetPasswordDto) {
+    const { token, password } = resetPasswordDto;
 
-        const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${encodeURIComponent(rawToken)}`;
-
-        await this.mailService.sendPasswordResetMail(
-            user.email,
-            user.user_name ?? 'there',
-            resetLink,
-        );
-
-        return { message: 'If the email exists, a reset link has been sent.' };
+    let payload: { sub: string; email: string; purpose: string };
+    try {
+      payload = await this.jwtService.verifyAsync(token, {
+        secret: process.env.PASSWORD_RESET_SECRET,
+      });
+    } catch {
+      throw new BadRequestException('Reset link is invalid or has expired.');
     }
 
-
-    public async resetPassword(resetPasswordDto: ResetPasswordDto) {
-        const { token, password } = resetPasswordDto;
-
-        let payload: { sub: string; email: string; purpose: string };
-        try {
-            payload = await this.jwtService.verifyAsync(token, {
-                secret: process.env.PASSWORD_RESET_SECRET,
-            });
-        } catch {
-            throw new BadRequestException('Reset link is invalid or has expired.');
-        }
-
-        if (payload.purpose !== PASSWORD_RESET) {
-            throw new BadRequestException('Invalid token purpose.');
-        }
-
-        const validTokens = await this.passwordResetTokenRepository.find({
-            where: {
-                user_id: payload.sub,
-                used: false,
-                expires_at: MoreThan(new Date()),
-            },
-            relations: ['user'],
-        });
-
-        if (!validTokens.length) {
-            throw new BadRequestException('Reset link is invalid or has expired.');
-        }
-
-        let matchedToken: PasswordResetToken | null = null;
-
-        for (const t of validTokens) {
-            const isMatch = await this.hashingProvider.comparePassword(token, t.token_hash);
-            if (isMatch) {
-                matchedToken = t;
-                break;
-            }
-        }
-
-        if (!matchedToken) {
-            throw new BadRequestException('Reset link is invalid or has expired.');
-        }
-
-        const user = matchedToken.user;
-
-        if (!user) {
-            throw new BadRequestException('User not found.');
-        }
-
-        await this.userRepository.update(user.id, { password: await this.hashingProvider.hashPassword(password) });
-
-        await this.passwordResetTokenRepository.update(
-            { user_id: payload.sub, used: false },
-            { used: true },
-        );
-
-        await this.mailService.sendPasswordResetSuccessMail(
-            user.email,
-            user.user_name ?? 'there',
-        );
-
-        return { message: 'Password reset successfully.' };
+    if (payload.purpose !== PASSWORD_RESET) {
+      throw new BadRequestException('Invalid token purpose.');
     }
 
-    public async changePassword(user_id: string, changePasswordDto: ChangePasswordDto) {
-        const { old_password, new_password } = changePasswordDto;
+    const validTokens = await this.passwordResetTokenRepository.find({
+      where: {
+        user_id: payload.sub,
+        used: false,
+        expires_at: MoreThan(new Date()),
+      },
+      relations: ['user'],
+    });
 
-        const user = await this.userRepository.findOne({ where: { id: user_id }, select: ['id', 'email', 'password', 'user_name'] });
-        if (!user) {
-            throw new UnauthorizedException('User not found');
-        }
-
-        const isMatch = await this.hashingProvider.comparePassword(old_password, user.password);
-
-        if (!isMatch) {
-            throw new UnauthorizedException('Old password is incorrect');
-        }
-
-        await this.userRepository.update(user.id, { password: await this.hashingProvider.hashPassword(new_password) });
-
-        return {
-            ...(await this.generateToken(user)),
-            user_id: user.id,
-            user_name: user.user_name,
-            email: user.email,
-            message: 'Password changed successfully',
-        };
+    if (!validTokens.length) {
+      throw new BadRequestException('Reset link is invalid or has expired.');
     }
 
-    private async signToken<T>(userId: string, expiresIn: number, payload?: T) {
-        return await this.jwtService.signAsync(
-            {
-                sub: userId,
-                ...payload,
-            },
-            {
-                secret: this.authConfiguration.secret,
-                expiresIn: expiresIn,
-                audience: this.authConfiguration.audience,
-                issuer: this.authConfiguration.issuer,
-            },
-        );
+    let matchedToken: PasswordResetToken | null = null;
+
+    for (const t of validTokens) {
+      const isMatch = await this.hashingProvider.comparePassword(
+        token,
+        t.token_hash,
+      );
+      if (isMatch) {
+        matchedToken = t;
+        break;
+      }
     }
 
-    private async generateToken(user: User) {
-        const [accessToken, refreshToken] = await Promise.all([
-            this.signToken<Partial<ActiveUserType>>(
-                String(user.id),
-                this.authConfiguration.expiresIn,
-                { email: user.email, role: user.role },
-            ),
-            this.signToken(
-                String(user.id),
-                this.authConfiguration.refreshTokenExpiresIn,
-            ),
-        ]);
-
-        return { access_token: accessToken, refresh_token: refreshToken };
+    if (!matchedToken) {
+      throw new BadRequestException('Reset link is invalid or has expired.');
     }
 
+    const user = matchedToken.user;
+
+    if (!user) {
+      throw new BadRequestException('User not found.');
+    }
+
+    await this.userRepository.update(user.id, {
+      password: await this.hashingProvider.hashPassword(password),
+    });
+
+    await this.passwordResetTokenRepository.update(
+      { user_id: payload.sub, used: false },
+      { used: true },
+    );
+
+    await this.mailService.sendPasswordResetSuccessMail(
+      user.email,
+      user.user_name ?? 'there',
+    );
+
+    return { message: 'Password reset successfully.' };
+  }
+
+  public async changePassword(
+    user_id: string,
+    changePasswordDto: ChangePasswordDto,
+  ) {
+    const { old_password, new_password } = changePasswordDto;
+
+    const user = await this.userRepository.findOne({
+      where: { id: user_id },
+      select: ['id', 'email', 'password', 'user_name'],
+    });
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    const isMatch = await this.hashingProvider.comparePassword(
+      old_password,
+      user.password,
+    );
+
+    if (!isMatch) {
+      throw new UnauthorizedException('Old password is incorrect');
+    }
+
+    await this.userRepository.update(user.id, {
+      password: await this.hashingProvider.hashPassword(new_password),
+    });
+
+    return {
+      ...(await this.generateToken(user)),
+      user_id: user.id,
+      user_name: user.user_name,
+      email: user.email,
+      message: 'Password changed successfully',
+    };
+  }
+
+  private async signToken<T>(userId: string, expiresIn: number, payload?: T) {
+    return await this.jwtService.signAsync(
+      {
+        sub: userId,
+        ...payload,
+      },
+      {
+        secret: this.authConfiguration.secret,
+        expiresIn: expiresIn,
+        audience: this.authConfiguration.audience,
+        issuer: this.authConfiguration.issuer,
+      },
+    );
+  }
+
+  private async generateToken(user: User) {
+    const [accessToken, refreshToken] = await Promise.all([
+      this.signToken<Partial<ActiveUserType>>(
+        String(user.id),
+        this.authConfiguration.expiresIn,
+        { email: user.email, role: user.role },
+      ),
+      this.signToken(
+        String(user.id),
+        this.authConfiguration.refreshTokenExpiresIn,
+      ),
+    ]);
+
+    return { access_token: accessToken, refresh_token: refreshToken };
+  }
 }

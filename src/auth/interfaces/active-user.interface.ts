@@ -1,7 +1,7 @@
-import { UserRole } from "@/common/enums";
+import { UserRole } from '@/common/enums';
 
 export interface ActiveUserType {
-    sub: number;
-    email: string;
-    role: UserRole;
+  sub: number;
+  email: string;
+  role: UserRole;
 }

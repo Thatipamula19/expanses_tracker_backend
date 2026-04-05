@@ -11,8 +11,10 @@ import { AuthModule } from '@/auth/auth.module';
   controllers: [CategoriesController],
   providers: [CategoriesService],
   exports: [CategoriesService],
-  imports: [TypeOrmModule.forFeature([Category]),
-  forwardRef(() => AuthModule),
-  JwtModule.registerAsync(authConfig.asProvider())],
+  imports: [
+    TypeOrmModule.forFeature([Category]),
+    forwardRef(() => AuthModule),
+    JwtModule.registerAsync(authConfig.asProvider()),
+  ],
 })
-export class CategoriesModule { }
+export class CategoriesModule {}

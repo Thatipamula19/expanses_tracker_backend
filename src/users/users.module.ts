@@ -13,11 +13,12 @@ import { JwtModule } from '@nestjs/jwt';
   controllers: [UsersController],
   providers: [UsersService],
   exports: [UsersService],
-  imports: [forwardRef(() => AuthModule),
-  TypeOrmModule.forFeature([User]),
+  imports: [
+    forwardRef(() => AuthModule),
+    TypeOrmModule.forFeature([User]),
     PaginationModule,
-  ConfigModule.forFeature(authConfig),
-  JwtModule.registerAsync(authConfig.asProvider())
-  ]
+    ConfigModule.forFeature(authConfig),
+    JwtModule.registerAsync(authConfig.asProvider()),
+  ],
 })
-export class UsersModule { }
+export class UsersModule {}

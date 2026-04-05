@@ -22,13 +22,19 @@ import { APP_GUARD } from '@nestjs/core';
 import { AuthorizeGuard } from './auth/guards/authorize.guard';
 import { AnalyticsModule } from './analytics/analytics.module';
 @Module({
-  imports: [UsersModule, CategoriesModule, TransactionsModule, BudgetsModule, GoalsModule, AuthModule,
+  imports: [
+    UsersModule,
+    CategoriesModule,
+    TransactionsModule,
+    BudgetsModule,
+    GoalsModule,
+    AuthModule,
     PaginationModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ENV ? `.env.${ENV.trim()}` : '.env',
       load: [appConfig, databaseConfig],
-      validationSchema: envValidation
+      validationSchema: envValidation,
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -46,11 +52,13 @@ import { AnalyticsModule } from './analytics/analytics.module';
           entities: [__dirname + '/**/*.entity{.ts,.js}'],
           synchronize: configService.get<boolean>('database.synchronize'), // ← use config, not hardcoded true
           ssl: isSSL ? { rejectUnauthorized: false } : false,
-          extra: isSSL ? {
-            ssl: {
-              rejectUnauthorized: false,
-            },
-          } : {},
+          extra: isSSL
+            ? {
+                ssl: {
+                  rejectUnauthorized: false,
+                },
+              }
+            : {},
         };
       },
     }),
@@ -60,11 +68,12 @@ import { AnalyticsModule } from './analytics/analytics.module';
     AnalyticsModule,
   ],
   controllers: [AppController],
-  providers: [AppService,
+  providers: [
+    AppService,
     {
       provide: APP_GUARD,
       useClass: AuthorizeGuard,
-    }
+    },
   ],
 })
-export class AppModule { }
+export class AppModule {}

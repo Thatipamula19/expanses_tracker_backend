@@ -24,7 +24,6 @@ export class Category {
   @Column({ type: 'varchar', length: 100 })
   name: string;
 
-
   @Column({ type: 'boolean', default: false })
   is_default: boolean;
 

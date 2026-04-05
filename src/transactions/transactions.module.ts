@@ -11,8 +11,12 @@ import { Budget } from '@/budgets/entities/budget.entity';
 @Module({
   controllers: [TransactionsController],
   providers: [TransactionsService],
-  imports: [PaginationModule, CategoriesModule, TypeOrmModule.forFeature([Transaction, Budget]), BudgetsModule],
+  imports: [
+    PaginationModule,
+    CategoriesModule,
+    TypeOrmModule.forFeature([Transaction, Budget]),
+    BudgetsModule,
+  ],
   exports: [TransactionsService],
-  
 })
 export class TransactionsModule {}

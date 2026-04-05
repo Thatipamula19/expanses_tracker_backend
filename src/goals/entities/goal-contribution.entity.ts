@@ -28,17 +28,21 @@ export class GoalContribution {
   amount: number;
 
   @CreateDateColumn({ type: 'timestamptz' })
-  contributed_at: Date; 
+  contributed_at: Date;
 
   // Relations
   @ManyToOne(() => Goal, (goal) => goal.contributions, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'goal_id' })
   goal: Goal;
 
-  @ManyToOne(() => Transaction, (transaction) => transaction.goal_contributions, {
-    onDelete: 'SET NULL',
-    nullable: true,
-  })
+  @ManyToOne(
+    () => Transaction,
+    (transaction) => transaction.goal_contributions,
+    {
+      onDelete: 'SET NULL',
+      nullable: true,
+    },
+  )
   @JoinColumn({ name: 'transaction_id' })
   transaction: Transaction;
 }

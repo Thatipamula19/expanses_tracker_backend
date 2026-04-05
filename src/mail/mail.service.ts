@@ -4,21 +4,23 @@ import { Resend } from 'resend';
 
 @Injectable()
 export class MailService {
-    private resend = new Resend(process.env.RESEND_API_KEY);
+  private resend = new Resend(process.env.RESEND_API_KEY);
 
-    async sendPasswordResetMail(
-        toEmail: string,
-        userName: string,
-        resetLink: string,
-    ): Promise<void> {
-        if (!process.env.MAIL_FROM) {
-            throw new InternalServerErrorException('MAIL_FROM environment variable is not set');
-        }
-        const { error } = await this.resend.emails.send({   
-            from: process.env.MAIL_FROM,
-            to: toEmail,
-            subject: 'Reset your password',
-            html: `
+  async sendPasswordResetMail(
+    toEmail: string,
+    userName: string,
+    resetLink: string,
+  ): Promise<void> {
+    if (!process.env.MAIL_FROM) {
+      throw new InternalServerErrorException(
+        'MAIL_FROM environment variable is not set',
+      );
+    }
+    const { error } = await this.resend.emails.send({
+      from: process.env.MAIL_FROM,
+      to: toEmail,
+      subject: 'Reset your password',
+      html: `
                 <div style="font-family: sans-serif; max-width: 480px; margin: auto;">
                     <h2>Password Reset Request</h2>
                     <p>Hi ${userName ?? 'there'},</p>
@@ -35,27 +37,29 @@ export class MailService {
                     </p>
                 </div>
             `,
-        });
+    });
 
-        if (error) {
-            throw new InternalServerErrorException(
-                error.message ?? 'Failed to send reset email.',
-            );
-        }
+    if (error) {
+      throw new InternalServerErrorException(
+        error.message ?? 'Failed to send reset email.',
+      );
     }
+  }
 
-    async sendPasswordResetSuccessMail(
-        toEmail: string,
-        userName: string,
-    ): Promise<void> {
-        if (!process.env.MAIL_FROM) {
-            throw new InternalServerErrorException('MAIL_FROM environment variable is not set');
-        }
-        const { error } = await this.resend.emails.send({
-            from: process.env.MAIL_FROM,
-            to: toEmail,
-            subject: 'Your password has been reset',
-            html: `
+  async sendPasswordResetSuccessMail(
+    toEmail: string,
+    userName: string,
+  ): Promise<void> {
+    if (!process.env.MAIL_FROM) {
+      throw new InternalServerErrorException(
+        'MAIL_FROM environment variable is not set',
+      );
+    }
+    const { error } = await this.resend.emails.send({
+      from: process.env.MAIL_FROM,
+      to: toEmail,
+      subject: 'Your password has been reset',
+      html: `
                 <div style="font-family: sans-serif; max-width: 480px; margin: auto;">
                     <h2>Password Reset Successful</h2>
                     <p>Hi ${userName ?? 'there'},</p>
@@ -65,12 +69,12 @@ export class MailService {
                     </p>
                 </div>
             `,
-        });
+    });
 
-        if (error) {
-            throw new InternalServerErrorException(
-                error.message ?? 'Failed to send confirmation email.',
-            );
-        }
+    if (error) {
+      throw new InternalServerErrorException(
+        error.message ?? 'Failed to send confirmation email.',
+      );
     }
+  }
 }

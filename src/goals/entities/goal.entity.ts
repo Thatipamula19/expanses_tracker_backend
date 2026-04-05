@@ -63,7 +63,9 @@ export class Goal {
   get progressPercentage(): number {
     if (!this.target_amount) return 0;
     return Math.min(
-      Math.round((Number(this.saved_amount) / Number(this.target_amount)) * 100),
+      Math.round(
+        (Number(this.saved_amount) / Number(this.target_amount)) * 100,
+      ),
       100,
     );
   }

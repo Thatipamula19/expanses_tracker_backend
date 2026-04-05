@@ -14,16 +14,21 @@ import { MailModule } from '@/mail/mail.module';
 
 @Module({
   controllers: [AuthController],
-  providers: [AuthService, {
-    provide: HashingProvider,
-    useClass: BcryptProvider
-  }, BcryptProvider],
+  providers: [
+    AuthService,
+    {
+      provide: HashingProvider,
+      useClass: BcryptProvider,
+    },
+    BcryptProvider,
+  ],
   exports: [AuthService, HashingProvider],
-  imports: [forwardRef(() => UsersModule),
-  ConfigModule.forFeature(authConfig),
-  JwtModule.registerAsync(authConfig.asProvider()),
-  TypeOrmModule.forFeature([User, PasswordResetToken]),
-  MailModule,
-]
+  imports: [
+    forwardRef(() => UsersModule),
+    ConfigModule.forFeature(authConfig),
+    JwtModule.registerAsync(authConfig.asProvider()),
+    TypeOrmModule.forFeature([User, PasswordResetToken]),
+    MailModule,
+  ],
 })
-export class AuthModule { }
+export class AuthModule {}

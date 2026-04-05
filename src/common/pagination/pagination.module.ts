@@ -3,6 +3,6 @@ import { PaginationProvider } from './pagination.provider';
 
 @Module({
   providers: [PaginationProvider],
-  exports: [PaginationProvider]
+  exports: [PaginationProvider],
 })
 export class PaginationModule {}

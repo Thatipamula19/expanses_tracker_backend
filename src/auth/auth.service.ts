@@ -15,6 +15,7 @@ import { ForgetPasswordDto } from './dtos/forgot-password.dto';
 import { ResetPasswordDto } from './dtos/reset-password.dto';
 import { PASSWORD_RESET } from '@/common/constants/constants';
 import { MailService } from '@/mail/mail.service';
+import { ChangePasswordDto } from './dtos/change-password.dto';
 @Injectable()
 export class AuthService {
     constructor(@Inject(forwardRef(() => UsersService)) private readonly userService: UsersService,
@@ -42,7 +43,7 @@ export class AuthService {
             throw new UnauthorizedException('Invalid credentials');
         }
 
-        return  {
+        return {
             ...(await this.generateToken(user)),
             user_id: user.id,
             user_name: user.user_name,
@@ -187,6 +188,31 @@ export class AuthService {
         );
 
         return { message: 'Password reset successfully.' };
+    }
+
+    public async changePassword(user_id: string, changePasswordDto: ChangePasswordDto) {
+        const { old_password, new_password } = changePasswordDto;
+
+        const user = await this.userRepository.findOne({ where: { id: user_id }, select: ['id', 'email', 'password', 'user_name'] });
+        if (!user) {
+            throw new UnauthorizedException('User not found');
+        }
+
+        const isMatch = await this.hashingProvider.comparePassword(old_password, user.password);
+
+        if (!isMatch) {
+            throw new UnauthorizedException('Old password is incorrect');
+        }
+
+        await this.userRepository.update(user.id, { password: await this.hashingProvider.hashPassword(new_password) });
+
+        return {
+            ...(await this.generateToken(user)),
+            user_id: user.id,
+            user_name: user.user_name,
+            email: user.email,
+            message: 'Password changed successfully',
+        };
     }
 
     private async signToken<T>(userId: string, expiresIn: number, payload?: T) {

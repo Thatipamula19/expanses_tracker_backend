@@ -6,8 +6,10 @@ import { AllowAnonymous } from './decorators/allow-anonaymous.decorator';
 import { RefreshTokenDto } from './dtos/refresh-token.dto';
 import { ForgetPasswordDto } from './dtos/forgot-password.dto';
 import { ResetPasswordDto } from './dtos/reset-password.dto';
-import { ApiOperation } from '@nestjs/swagger';
-
+import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { ActiveUser } from './decorators/active-user.decorator';
+import { ChangePasswordDto } from './dtos/change-password.dto';
+@ApiBearerAuth("access-token")
 @Controller('auth')
 export class AuthController {
     constructor(private authService: AuthService) {}
@@ -50,5 +52,12 @@ export class AuthController {
     @ApiOperation({ summary: 'Reset password' })
     async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
         return await this.authService.resetPassword(resetPasswordDto);
+    }
+
+    @HttpCode(HttpStatus.OK)
+    @Post('change-password')
+    @ApiOperation({ summary: 'Change password' })
+    async changePassword(@ActiveUser('sub') user_id: string, @Body() changePasswordDto: ChangePasswordDto) {
+        return await this.authService.changePassword(user_id, changePasswordDto);
     }
 }

@@ -6,6 +6,7 @@ export default Joi.object({
     DB_USERNAME: Joi.string().required(),
     DB_PASSWORD: Joi.string().required(),
     DB_NAME: Joi.string().required(),
+    DB_SSL: Joi.boolean().default(false),
     JWT_SECRETE_KEY: Joi.string().required(),
     JWT_TOKEN_EXPIRES: Joi.number().required(),
     REFRESH_TOKEN_EXPIRES: Joi.number().required(),

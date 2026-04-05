@@ -34,6 +34,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
+        const isSSL = configService.get<boolean>('database.ssl');
         return {
           type: 'postgres',
           host: configService.get('database.host'),
@@ -43,7 +44,13 @@ import { AnalyticsModule } from './analytics/analytics.module';
           database: configService.get('database.name'),
           autoLoadEntities: configService.get('database.autoLoadEntities'),
           entities: [__dirname + '/**/*.entity{.ts,.js}'],
-          synchronize: true,
+          synchronize: configService.get<boolean>('database.synchronize'), // ← use config, not hardcoded true
+          ssl: isSSL ? { rejectUnauthorized: false } : false,
+          extra: isSSL ? {
+            ssl: {
+              rejectUnauthorized: false,
+            },
+          } : {},
         };
       },
     }),

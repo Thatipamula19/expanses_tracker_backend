@@ -38,7 +38,7 @@ export class AuthService {
 
     @InjectRepository(PasswordResetToken)
     private readonly passwordResetTokenRepository: Repository<PasswordResetToken>,
-  ) {}
+  ) { }
 
   isAuthenticated: boolean = false;
 
@@ -66,7 +66,20 @@ export class AuthService {
   }
 
   public async createUser(createUserDto: CreateUserDto) {
-    return await this.userService.createUser(createUserDto);
+    try {
+      const user = await this.userService.createUser(createUserDto);
+      return {
+        ...(await this.generateToken(user)),
+        user_id: user.id,
+        user_name: user.user_name,
+        email: user.email,
+        message: 'User created successfully',
+      };
+    } catch (error) {
+      throw new BadRequestException(
+        error?.message ?? 'User creation failed',
+      );
+    }
   }
 
   public async refreshToken(refreshTokenDto: RefreshTokenDto) {

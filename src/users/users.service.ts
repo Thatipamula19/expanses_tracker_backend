@@ -69,12 +69,7 @@ export class UsersService {
 
       const newUser = await this.userRepository.save(user);
 
-      return {
-        message: 'User created successfully',
-        user_id: newUser.id,
-        user_name: newUser.user_name,
-        email: newUser.email,
-      };
+      return newUser;
     } catch (error) {
       console.log('error', error);
       if (error.code === 'ECONNREFUSED') {

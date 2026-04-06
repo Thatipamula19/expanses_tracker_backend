@@ -89,7 +89,7 @@ export class UsersService {
     try {
       const user = await this.userRepository.findOne({
         where: { email },
-        select: ['id', 'email', 'password', 'role'],
+        select: ['id', 'email', 'password', 'role', 'user_name'],
       });
       if (!user) {
         throw new HttpException(

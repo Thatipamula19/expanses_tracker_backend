@@ -41,6 +41,7 @@ export class CategoriesController {
 
   @Post('/create')
   @HttpCode(HttpStatus.CREATED)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Create category' })
   async createCategory(@Body() addCategoryDto: AddCategoryDto) {
     return await this.categoriesService.addCategory(addCategoryDto);
@@ -49,6 +50,7 @@ export class CategoriesController {
   @Put('/update/:category_id')
   @ApiOperation({ summary: 'Update category' })
   @HttpCode(HttpStatus.OK)
+  @Roles(UserRole.ADMIN)
   async updateCategory(
     @Param('category_id') category_id: string,
     @Body() updateCategoryDto: UpdateCategoryDto,
@@ -60,6 +62,7 @@ export class CategoriesController {
   }
 
   @Delete('/delete')
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Delete category' })
   @HttpCode(HttpStatus.OK)
   async deleteCategory(@Body() deleteCategoryDto: any) {

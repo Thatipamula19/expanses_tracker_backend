@@ -24,6 +24,9 @@ export class Category {
   @Column({ type: 'varchar', length: 100 })
   name: string;
 
+  @Column({ type: 'varchar' , nullable: true })
+  icon: string;
+
   @Column({ type: 'boolean', default: false })
   is_default: boolean;
 

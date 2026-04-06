@@ -56,13 +56,13 @@ export class PaginationProvider {
         currentPage: currentPage,
         totalPages: totalPages,
       },
-      links: {
-        first: `${pageUrl}?limit=${paginationQueryDto.limit}&page=1`,
-        last: `${pageUrl}?limit=${paginationQueryDto.limit}&page=${totalPages}`,
-        current: `${pageUrl}?limit=${paginationQueryDto.limit}&page=${currentPage}`,
-        previous: `${pageUrl}?limit=${paginationQueryDto.limit}&page=${prevPage}`,
-        next: `${pageUrl}?limit=${paginationQueryDto.limit}&page=${nextPage}`,
-      },
+      // links: {
+      //   first: `${pageUrl}?limit=${paginationQueryDto.limit}&page=1`,
+      //   last: `${pageUrl}?limit=${paginationQueryDto.limit}&page=${totalPages}`,
+      //   current: `${pageUrl}?limit=${paginationQueryDto.limit}&page=${currentPage}`,
+      //   previous: `${pageUrl}?limit=${paginationQueryDto.limit}&page=${prevPage}`,
+      //   next: `${pageUrl}?limit=${paginationQueryDto.limit}&page=${nextPage}`,
+      // },
     };
 
     return response;

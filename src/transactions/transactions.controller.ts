@@ -31,12 +31,12 @@ export class TransactionsController {
     return await this.transactionsService.getStatistics(user_id);
   }
 
-  @Post('/get-filter-transactions')
+  @Get('/get-filter-transactions')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get filtered transactions' })
   async getTransactions(
     @ActiveUser('sub') user_id: string,
-    @Body() getTransactionsDto: GetTransactionsDto,
+    @Query() getTransactionsDto: GetTransactionsDto,
   ) {
     return await this.transactionsService.getTransactions(
       user_id,

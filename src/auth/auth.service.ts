@@ -61,6 +61,7 @@ export class AuthService {
       user_id: user.id,
       user_name: user.user_name,
       email: user.email,
+      role: user.role,
       message: 'Login successful',
     };
   }
@@ -73,6 +74,7 @@ export class AuthService {
         user_id: user.id,
         user_name: user.user_name,
         email: user.email,
+        role: user.role,
         message: 'User created successfully',
       };
     } catch (error) {

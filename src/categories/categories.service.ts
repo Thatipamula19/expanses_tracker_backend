@@ -17,7 +17,13 @@ export class CategoriesService {
       const categories = await this.categoryRepository.find();
       return {
         message: 'Categories fetched successfully',
-        categories,
+        categories : categories?.map((category) => {
+          return {
+            id: category.id,
+            name: category.name,
+            icon: category.icon,
+          }
+        }),
       };
     } catch (error) {
       throw new InternalServerErrorException(

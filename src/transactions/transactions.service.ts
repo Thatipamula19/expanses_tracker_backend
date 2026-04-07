@@ -187,6 +187,7 @@ export class TransactionsService {
             user_id,
           },
           order: { transaction_date: 'DESC' },
+          relations: { category: true },
           take: 5,
         }),
       ]);
@@ -280,7 +281,7 @@ export class TransactionsService {
           total_expense: Math.round(totalExpense),
           data: expense_breakdown,
         },
-        latest_transactions: latestTxns,
+        latest_transactions: latestTxns?.map((txn) => (this.formatTransaction(txn))) ?? [],
       };
     } catch (error) {
       throw new InternalServerErrorException(
@@ -473,14 +474,16 @@ export class TransactionsService {
       const transactions = await this.paginateService.paginateQuery(
         getTransactionsDto, // carries page + limit
         this.transactionRepository,
-        { user: true, category: true }, // relations
+        { category: true }, // relations
         whereConditions as FindOptionsWhere<Transaction>, // dynamic where
         order, // dynamic sort
       );
-
       return {
         message: 'Transactions retrieved successfully',
-        transactions,
+        transactions: {
+          ...transactions,
+          data: transactions?.data?.map((t) => this.formatTransaction(t)),
+        },
       };
     } catch (error) {
       throw new InternalServerErrorException(
@@ -556,7 +559,7 @@ export class TransactionsService {
       if (!updatedTransaction.affected) {
         throw new InternalServerErrorException('Failed to update transaction');
       }
-      
+
       const newTransaction = await this.transactionRepository.findOne({
         where: { id: transaction?.id },
         relations: { category: true },

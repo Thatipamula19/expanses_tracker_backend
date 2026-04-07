@@ -21,7 +21,6 @@ import { ApiOperation } from '@nestjs/swagger';
 @ApiBearerAuth('access-token')
 @Controller('categories')
 @UseGuards(RolesGuard) // ← apply both guards at controller level
-@Roles(UserRole.ADMIN)
 export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 

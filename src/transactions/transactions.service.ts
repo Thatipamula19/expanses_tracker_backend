@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { AddTransactionDto } from './dtos/add-transaction.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Transaction } from './entities/transaction.entity';
@@ -33,7 +33,7 @@ export class TransactionsService {
 
     @InjectRepository(Budget)
     private readonly budgetRepository: Repository<Budget>,
-  ) {}
+  ) { }
 
   public async getStatistics(user_id: string) {
     try {
@@ -322,6 +322,7 @@ export class TransactionsService {
         {
           spent: number;
           category_name: string;
+          category_icon: string;
         }
       >();
 
@@ -335,6 +336,7 @@ export class TransactionsService {
           spentMap.set(key, {
             spent: Number(txn.amount),
             category_name: txn.category?.name ?? 'Uncategorized',
+            category_icon: txn.category?.icon ?? 'default',
           });
         }
       }
@@ -358,6 +360,7 @@ export class TransactionsService {
         return {
           category_id: budget.category_id,
           category_name: budget.category?.name ?? 'Uncategorized',
+          category_icon: budget.category?.icon ?? 'default',
           budget_id: budget.id,
           has_budget: true,
           limit_amount: limitAmount,
@@ -372,6 +375,7 @@ export class TransactionsService {
         categoryData.push({
           category_id: categoryId,
           category_name: entry.category_name,
+          category_icon: entry.category_icon,
           budget_id: 'null',
           has_budget: false,
           limit_amount: 0,
@@ -495,11 +499,11 @@ export class TransactionsService {
         relations: { user: true, category: true },
       });
       if (!transaction) {
-        throw new InternalServerErrorException('Transaction not found');
+        throw new NotFoundException('Transaction not found');
       }
       return {
         message: 'Transaction retrieved successfully',
-        transaction: transaction,
+        transaction: this.formatTransaction(transaction!),
       };
     } catch (error) {
       throw new InternalServerErrorException(
@@ -510,13 +514,25 @@ export class TransactionsService {
 
   public async addTransaction(transaction: AddTransactionDto, user_id: string) {
     try {
-      const newTransaction = await this.transactionRepository.save({
+      const saved = await this.transactionRepository.save({
         ...transaction,
         user_id,
       });
+      if (!saved) {
+        throw new InternalServerErrorException('Failed to add transaction');
+      }
+
+      const newTransaction = await this.transactionRepository.findOne({
+        where: { id: saved.id },
+        relations: { category: true },
+      });
+      if (!newTransaction) {
+        throw new InternalServerErrorException('Failed to add transaction');
+      }
+
       return {
         message: 'Transaction added successfully',
-        transaction: newTransaction,
+        transaction: this.formatTransaction(newTransaction!),
       };
     } catch (error) {
       throw new InternalServerErrorException(
@@ -537,9 +553,20 @@ export class TransactionsService {
           user_id,
         },
       );
+      if (!updatedTransaction.affected) {
+        throw new InternalServerErrorException('Failed to update transaction');
+      }
+      
+      const newTransaction = await this.transactionRepository.findOne({
+        where: { id: transaction?.id },
+        relations: { category: true },
+      });
+      if (!newTransaction) {
+        throw new InternalServerErrorException('Failed to update transaction');
+      }
       return {
         message: 'Transaction updated successfully',
-        transaction: updatedTransaction,
+        transaction: this.formatTransaction(newTransaction!),
       };
     } catch (error) {
       throw new InternalServerErrorException(
@@ -606,4 +633,20 @@ export class TransactionsService {
 
     return { start, end };
   }
+
+  private formatTransaction(transaction: Transaction) {
+    return {
+      id: transaction.id,
+      title: transaction.title,
+      description: transaction.description,
+      amount: transaction.amount,
+      type: transaction.type,
+      transaction_date: transaction.transaction_date,
+      currency: transaction.currency,
+      category_id: transaction.category_id,
+      category_name: transaction.category?.name ?? 'Uncategorized',
+      category_icon: transaction.category?.icon ?? 'default',
+    };
+  }
 }
+

@@ -38,7 +38,6 @@ export class AddTransactionDto {
 
   @ApiProperty({ description: 'Transaction Date' })
   @IsNotEmpty({ message: 'Transaction Date is required' })
-  @IsString({ message: 'Transaction Date must be a string' })
   @IsDate({ message: 'Transaction Date must be a valid date' })
   transaction_date: Date;
 }

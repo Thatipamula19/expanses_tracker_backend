@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
+  IsDate,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -23,8 +24,8 @@ export class AddBudgetDto {
 
   @ApiProperty({ description: 'Period month' })
   @IsNotEmpty({ message: 'Period month is required.' })
-  @IsString({ message: 'Period month must be a string.' })
-  period_month: string;
+  @IsDate({ message: 'Period month must be a date.' })
+  period_month: Date;
 
   @ApiProperty({ description: 'Notes' })
   @IsString({ message: 'Notes must be a string.' })

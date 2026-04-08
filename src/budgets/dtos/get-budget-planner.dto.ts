@@ -7,24 +7,26 @@ export class GetBudgetPlannerDto {
     type: Number,
     required: false,
     description: 'Month (1-12). Defaults to current month.',
+    default: new Date().getMonth() + 1,
   })
   @IsOptional()
   @IsInt()
   @Min(1)
   @Max(12)
   @Type(() => Number)
-  month?: number;
+  month?: number = new Date().getMonth() + 1;
 
   @ApiProperty({
     type: Number,
     required: false,
     description: 'Year e.g. 2026. Defaults to current year.',
+    default: new Date().getFullYear(),
   })
   @IsOptional()
   @IsInt()
   @Min(2000)
   @Type(() => Number)
-  year?: number;
+  year?: number = new Date().getFullYear();
 }
 
 export class GetBudgetTableDto extends GetBudgetPlannerDto {

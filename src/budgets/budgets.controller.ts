@@ -44,7 +44,7 @@ export class BudgetsController {
     return await this.budgetsService.getBudget(user_id, budget_id);
   }
 
-  @Get('planner/summary')
+  @Get('get-statistics')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Budget planner — top summary cards' })
   async getBudgetPlannerSummary(
@@ -54,17 +54,17 @@ export class BudgetsController {
     return this.budgetsService.getBudgetPlannerSummary(user_id, dto);
   }
 
-  @Get('planner/table')
+  @Post('/get-filtered-budgets')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Budget planner — paginated category table' })
   async getBudgetPlannerTable(
     @ActiveUser('sub') user_id: string,
-    @Query() dto: GetBudgetTableDto,
+    @Body() dto: GetBudgetTableDto,
   ) {
     return this.budgetsService.getBudgetPlannerTable(user_id, dto);
   }
 
-  @Get('insights')
+  @Get('get-insights')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Budget insights — trend line + category allocation pie',

@@ -29,8 +29,8 @@ export class Budget {
   @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
   spent_amount: number;
 
-  @Column({ type: 'varchar', length: 7 })
-  period_month: string;
+  @Column({ type: 'date', default: () => 'CURRENT_DATE' })
+  period_month: Date;
 
   @Column({ type: 'text', nullable: true })
   notes: string;

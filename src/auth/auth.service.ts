@@ -276,12 +276,12 @@ export class AuthService {
     const [accessToken, refreshToken] = await Promise.all([
       this.signToken<Partial<ActiveUserType>>(
         String(user.id),
-        this.authConfiguration.expiresIn,
+        this.authConfiguration.expiresIn * 1000,
         { email: user.email, role: user.role },
       ),
       this.signToken(
         String(user.id),
-        this.authConfiguration.refreshTokenExpiresIn,
+        this.authConfiguration.refreshTokenExpiresIn * 1000,
       ),
     ]);
 

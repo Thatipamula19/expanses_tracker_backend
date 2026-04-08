@@ -114,27 +114,38 @@ export class TransactionsService {
       );
 
       return {
-        total_balance: {
-          amount: current.balance,
-          change_amount: current.balance - previous.balance,
-          change_percentage: balanceChange,
-          trend: balanceChange >= 0 ? 'up' : 'down',
-        },
-        total_income: {
-          amount: current.income,
-          change_percentage: incomeChange,
-          trend: incomeChange >= 0 ? 'up' : 'down',
-        },
-        total_expense: {
-          amount: current.expense,
-          change_percentage: expenseChange,
-          trend: expenseChange <= 0 ? 'up' : 'down',
-        },
-        savings_rate: {
-          percentage: currentSavingsRate,
-          change_percentage: savingsRateChange,
-          trend: savingsRateChange >= 0 ? 'up' : 'down',
-        },
+        message: 'Transactions statistics retrieved successfully',
+        statistics: [
+          {
+            id: 1,
+            title: 'Total Balance',
+            amount: current.balance,
+            change_amount: current.balance - previous.balance,
+            change_percentage: balanceChange,
+            trend: balanceChange >= 0 ? 'up' : 'down',
+          },
+          {
+            id: 2,
+            title: 'Total Income',
+            amount: current.income,
+            change_percentage: incomeChange,
+            trend: incomeChange >= 0 ? 'up' : 'down',
+          },
+          {
+            id: 3,
+            title: 'Total Expense',
+            amount: current.expense,
+            change_percentage: expenseChange,
+            trend: expenseChange <= 0 ? 'up' : 'down',
+          },
+          {
+            id: 4,
+            title: 'Savings Rate',
+            percentage: currentSavingsRate,
+            change_percentage: savingsRateChange,
+            trend: savingsRateChange >= 0 ? 'up' : 'down',
+          },
+        ]
       };
     } catch (error) {
       throw new InternalServerErrorException(
@@ -305,7 +316,7 @@ export class TransactionsService {
 
       const [budgets, transactions] = await Promise.all([
         this.budgetRepository.find({
-          where: { user_id, period_month: periodKey },
+          where: { user_id, period_month: monthStart },
           relations: { category: true },
         }),
         this.transactionRepository.find({

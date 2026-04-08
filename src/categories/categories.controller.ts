@@ -64,7 +64,7 @@ export class CategoriesController {
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Delete category' })
   @HttpCode(HttpStatus.OK)
-  async deleteCategory(@Body() deleteCategoryDto: any) {
-    return await this.categoriesService.deleteCategory(deleteCategoryDto);
+  async deleteCategory(@Param('category_id') category_id: string) {
+    return await this.categoriesService.deleteCategory(category_id);
   }
 }

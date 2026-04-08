@@ -87,9 +87,9 @@ export class CategoriesService {
     }
   }
 
-  async deleteCategory(deleteCategoryDto: any) {
+  async deleteCategory(categoryId: string) {
     try {
-      await this.categoryRepository.delete(deleteCategoryDto.id);
+      await this.categoryRepository.delete(categoryId);
       return {
         message: 'Category deleted successfully',
       };

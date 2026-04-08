@@ -100,10 +100,10 @@ export class GoalsController {
     return this.goalsService.addContribution(user_id, addContributionDto);
   }
 
-  @Delete('contribution/remove/:contribution_id')
+  @Delete('/delete/:contribution_id')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Remove contribution from a goal' })
-  async removeContribution(
+  @ApiOperation({ summary: 'Delete contribution from a goal' })
+  async deleteContribution(
     @ActiveUser('sub') user_id: string,
     @Param('contribution_id') contribution_id: string,
   ) {

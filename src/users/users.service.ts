@@ -111,16 +111,16 @@ export class UsersService {
     }
   }
 
-  public async findOneById(id: number): Promise<User | undefined> {
+  public async findOneById(id: string): Promise<User | undefined> {
     try {
       const user = await this.userRepository.findOne({
-        where: { id: String(id) },
+        where: { id },
       });
       if (!user) {
         throw new HttpException(
           {
             status: HttpStatus.NOT_FOUND,
-            error: `User with id ${String(id)} not found`,
+            error: `User with id ${id} not found`,
             table: 'users',
             code: 'USER_NOT_FOUND',
           },

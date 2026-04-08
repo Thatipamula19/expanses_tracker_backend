@@ -435,10 +435,10 @@ export class BudgetsService {
     }
   }
 
-  async deleteBudget(user_id: string, DeleteBudgetDto: DeleteBudgetDto) {
+  async deleteBudget(user_id: string, budget_id: string) {
     try {
       const budget = await this.budgetsRepository.findOneOrFail({
-        where: { id: DeleteBudgetDto?.budget_id, user_id },
+        where: { id: budget_id, user_id },
       });
 
       if (!budget) {
@@ -446,7 +446,7 @@ export class BudgetsService {
       }
 
       await this.budgetsRepository.delete({
-        id: DeleteBudgetDto?.budget_id,
+        id: budget_id,
         user_id,
       });
       return { message: 'Budget deleted successfully' };

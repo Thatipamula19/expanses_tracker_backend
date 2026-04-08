@@ -18,6 +18,7 @@ import { UpdateTransactionDto } from './dtos/update-transaction.dto';
 import { GetTransactionsDto } from './dtos/get-transactions.dto';
 import { GetOverviewDto } from './dtos/get-overview.dto';
 import { GetCategoryWiseExpensesDto } from './dtos/get-category-expenses.dto';
+import { DeleteTransactionDto } from './dtos/delete-transaction.dto';
 
 @ApiBearerAuth('access-token')
 @Controller('transactions')
@@ -31,12 +32,12 @@ export class TransactionsController {
     return await this.transactionsService.getStatistics(user_id);
   }
 
-  @Get('/get-filter-transactions')
+  @Post('/get-filter-transactions')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get filtered transactions' })
   async getTransactions(
     @ActiveUser('sub') user_id: string,
-    @Query() getTransactionsDto: GetTransactionsDto,
+    @Body() getTransactionsDto: GetTransactionsDto,
   ) {
     return await this.transactionsService.getTransactions(
       user_id,
@@ -100,16 +101,16 @@ export class TransactionsController {
     );
   }
 
-  @Delete('/delete-transaction')
+  @Delete('/delete-transaction/:transaction_id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete transaction' })
   async deleteTransaction(
-    @Body() transaction: UpdateTransactionDto,
     @ActiveUser('sub') user_id: string,
+    @Param('transaction_id') transaction_id: string,
   ) {
     return await this.transactionsService.deleteTransaction(
-      transaction,
       user_id,
+      transaction_id
     );
   }
 }

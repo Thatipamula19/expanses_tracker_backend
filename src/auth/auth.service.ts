@@ -94,8 +94,7 @@ export class AuthService {
           issuer: this.authConfiguration.issuer,
         },
       );
-
-      const user = await this.userService.findOneById(Number(sub));
+      const user = await this.userService.findOneById(sub);
       if (!user) {
         throw new UnauthorizedException('User not found');
       }

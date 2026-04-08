@@ -39,15 +39,9 @@ export class PaginationProvider {
       findOptions.order = order;
     }
     const result = await repository.find(findOptions);
-    const totalItems = await repository.count();
+    const totalItems = await repository.count(findOptions);
     const currentPage = Number(paginationQueryDto.page);
     const totalPages = Math.ceil(totalItems / paginationQueryDto.limit);
-    const nextPage = currentPage === totalPages ? currentPage : currentPage + 1;
-    const prevPage = currentPage === 1 ? currentPage : currentPage - 1;
-    const baseUrl =
-      this.request.protocol + '://' + this.request.headers.host + '/';
-    const newUrl = new URL(this.request.url, baseUrl);
-    const pageUrl = `${newUrl.origin}${newUrl.pathname}`;
     const response: Paginated<T> = {
       data: result,
       meta: {
@@ -55,14 +49,7 @@ export class PaginationProvider {
         totalItems: totalItems,
         currentPage: currentPage,
         totalPages: totalPages,
-      },
-      // links: {
-      //   first: `${pageUrl}?limit=${paginationQueryDto.limit}&page=1`,
-      //   last: `${pageUrl}?limit=${paginationQueryDto.limit}&page=${totalPages}`,
-      //   current: `${pageUrl}?limit=${paginationQueryDto.limit}&page=${currentPage}`,
-      //   previous: `${pageUrl}?limit=${paginationQueryDto.limit}&page=${prevPage}`,
-      //   next: `${pageUrl}?limit=${paginationQueryDto.limit}&page=${nextPage}`,
-      // },
+      }
     };
 
     return response;

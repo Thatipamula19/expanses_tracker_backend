@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -95,13 +96,13 @@ export class BudgetsController {
     return await this.budgetsService.updateBudget(user_id, updateBudgetDto);
   }
 
-  @Post('/delete')
+  @Delete('/delete/:budget_id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete budget' })
   async deleteBudget(
     @ActiveUser('sub') user_id: string,
-    @Body() deleteBudgetDto: DeleteBudgetDto,
-  ) {
-    return await this.budgetsService.deleteBudget(user_id, deleteBudgetDto);
+    @Param('budget_id') budget_id: string,
+    ) {
+    return await this.budgetsService.deleteBudget(user_id, budget_id);
   }
 }

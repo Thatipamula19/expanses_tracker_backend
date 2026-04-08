@@ -455,14 +455,14 @@ export class TransactionsService {
             {
               ...baseWhere,
               title: ILike(`%${search}%`),
-              category: { name: In(categories) },
+              category: { id: In(categories) },
             },
-            { ...baseWhere, category: { name: ILike(`%${search}%`) } },
+            { ...baseWhere, category: { id: In(categories) } },
           ];
         }
       } else {
         if (categories?.length) {
-          baseWhere.category = { name: In(categories) };
+          baseWhere.category = { id: In(categories) };
         }
         whereConditions = baseWhere;
       }
@@ -579,11 +579,11 @@ export class TransactionsService {
   }
 
   public async deleteTransaction(
-    transaction: DeleteTransactionDto,
     user_id: string,
+    transaction_id: string,
   ) {
     try {
-      await this.transactionRepository.delete(transaction?.id);
+      await this.transactionRepository.delete(transaction_id);
       return {
         message: 'Transaction deleted successfully',
       };

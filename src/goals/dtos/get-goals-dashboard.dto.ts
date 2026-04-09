@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsOptional } from 'class-validator';
+import { IsEnum, IsOptional, IsPositive } from 'class-validator';
 import { GoalStatus, GoalTimePeriod } from '@/common/enums';
 
 export class GetGoalsDashboardDto {
@@ -16,4 +16,14 @@ export class GetGoalsDashboardDto {
   @IsOptional()
   @IsEnum(GoalTimePeriod)
   time_period?: GoalTimePeriod = GoalTimePeriod.ALL_TIME;
+
+  @ApiProperty({ type: Number, required: false, default: 10 })
+  @IsOptional()
+  @IsPositive()
+  limit: number = 10;
+
+  @ApiProperty({ type: Number, required: false, default: 1 })
+  @IsOptional()
+  @IsPositive()
+  page: number = 1;
 }

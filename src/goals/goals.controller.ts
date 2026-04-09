@@ -11,28 +11,29 @@ import {
   Query,
 } from '@nestjs/common';
 import { GoalsService } from './goals.service';
-import { ApiOperation } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { ActiveUser } from '@/auth/decorators/active-user.decorator';
 import { GetGoalsDashboardDto } from './dtos/get-goals-dashboard.dto';
 import { AddContributionDto } from './dtos/add-goal-contribution.dto';
 import { AddGoalDto } from './dtos/add-goal-dto';
 import { UpdateGoalDto } from './dtos/update-goal-dto';
 
+@ApiBearerAuth('access-token')
 @Controller('goals')
 export class GoalsController {
   constructor(private readonly goalsService: GoalsService) {}
 
-  @Get('dashboard/cards')
+  @Get('get-filtered-goals')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Goal dashboard — top cards with progress bars' })
   async getGoalCards(
     @ActiveUser('sub') user_id: string,
     @Query() dto: GetGoalsDashboardDto,
   ) {
-    return this.goalsService.getGoalCards(user_id, dto);
+    return this.goalsService.getFilteredGoals(user_id, dto);
   }
 
-  @Get('dashboard/overview')
+  @Get('overview')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Goal dashboard — bar chart + pie chart' })
   async getGoalProgressOverview(
@@ -80,9 +81,9 @@ export class GoalsController {
     return this.goalsService.getGoal(user_id, goal_id);
   }
 
-  @Delete('remove/:goal_id')
+  @Delete('delete/:goal_id')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Remove a goal' })
+  @ApiOperation({ summary: 'Delete a goal' })
   async removeGoal(
     @ActiveUser('sub') user_id: string,
     @Param('goal_id') goal_id: string,

@@ -6,13 +6,14 @@ import {
 } from '@nestjs/common';
 import { GetGoalsDashboardDto } from './dtos/get-goals-dashboard.dto';
 import { GoalStatus, GoalTimePeriod } from '@/common/enums';
-import { Between, FindOptionsWhere, Repository } from 'typeorm';
+import { Between, FindOptionsOrder, FindOptionsWhere, Repository } from 'typeorm';
 import { AddContributionDto } from './dtos/add-goal-contribution.dto';
 import { Goal } from './entities/goal.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { GoalContribution } from './entities/goal-contribution.entity';
 import { AddGoalDto } from './dtos/add-goal-dto';
 import { UpdateGoalDto } from './dtos/update-goal-dto';
+import { PaginationProvider } from '@/common/pagination/pagination.provider';
 
 @Injectable()
 export class GoalsService {
@@ -21,9 +22,10 @@ export class GoalsService {
     private readonly goalRepository: Repository<Goal>,
     @InjectRepository(GoalContribution)
     private readonly contributionRepository: Repository<GoalContribution>,
-  ) {}
+    private readonly paginateService: PaginationProvider,
+  ) { }
 
-  public async getGoalCards(user_id: string, dto: GetGoalsDashboardDto) {
+  public async getFilteredGoals(user_id: string, dto: GetGoalsDashboardDto) {
     try {
       const where: FindOptionsWhere<Goal> = { user_id };
 
@@ -38,13 +40,22 @@ export class GoalsService {
         }
       }
 
-      const goals = await this.goalRepository.find({
+      const allGoals = await this.goalRepository.find({
         where,
-        relations: { category: true },
-        order: { created_at: 'DESC' },
+        select: { status: true },
       });
 
-      const cards = goals.map((goal) => {
+      const order: FindOptionsOrder<Goal> = { created_at: 'DESC' };
+
+      const paginated = await this.paginateService.paginateQuery(
+        dto,
+        this.goalRepository,
+        { category: true },
+        where,
+        order,
+      );
+
+      const cards = paginated.data.map((goal) => {
         const targetAmount = Number(goal.target_amount);
         const savedAmount = Number(goal.saved_amount);
         const remainingAmount = Math.max(targetAmount - savedAmount, 0);
@@ -68,12 +79,12 @@ export class GoalsService {
       });
 
       return {
-        total_goals: goals.length,
-        completed_count: goals.filter((g) => g.status === GoalStatus.COMPLETED)
-          .length,
-        ongoing_count: goals.filter((g) => g.status === GoalStatus.ONGOING)
-          .length,
-        cards,
+        message: 'Goals filtered successfully',
+        total_goals: allGoals.length,
+        completed_count: allGoals.filter((g) => g.status === GoalStatus.COMPLETED).length,
+        ongoing_count: allGoals.filter((g) => g.status === GoalStatus.ONGOING).length,
+        ...paginated,
+        data: cards,
       };
     } catch (error) {
       throw new InternalServerErrorException('Failed to get goal cards');

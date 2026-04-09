@@ -30,198 +30,178 @@ export class BudgetsService {
     private readonly paginateService: PaginationProvider,
   ) { }
 
-  public async getBudgetPlannerSummary(
-    user_id: string,
-    dto: GetBudgetPlannerDto,
-  ) {
-    try {
-      const now = new Date();
-      const targetMonth = dto.month ?? now.getMonth() + 1;
-      const targetYear = dto.year ?? now.getFullYear();
-      const periodKey = `${targetYear}-${String(targetMonth).padStart(2, '0')}`;
-      const monthStart = new Date(targetYear, targetMonth - 1, 1);
-      const monthEnd = new Date(targetYear, targetMonth, 0, 23, 59, 59, 999);
+public async getBudgetPlannerSummary(
+  user_id: string,
+  dto: GetBudgetPlannerDto,
+) {
+  try {
+    const now = new Date();
+    const periodKey =
+      dto.period ??
+      `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
-      const MONTH_LABELS = [
-        'Jan',
-        'Feb',
-        'Mar',
-        'Apr',
-        'May',
-        'Jun',
-        'Jul',
-        'Aug',
-        'Sep',
-        'Oct',
-        'Nov',
-        'Dec',
-      ];
+    // Parse YYYY-MM into numeric parts
+    const [targetYear, targetMonth] = periodKey.split('-').map(Number);
 
-      const [budgets, transactions] = await Promise.all([
-        this.budgetsRepository.find({
-          where: { user_id, period_month: Between(monthStart, monthEnd) },
-          relations: { category: true },
-        }),
-        this.transactionsRepository.find({
-          where: {
-            user_id,
-            type: TransactionType.EXPENSE,
-            transaction_date: Between(monthStart, monthEnd),
-          },
-        }),
-      ]);
+    const MONTH_LABELS = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
 
-      const totalBudget = budgets.reduce(
-        (s, b) => s + Number(b.limit_amount),
-        0,
-      );
-      const totalSpent = transactions.reduce((s, t) => s + Number(t.amount), 0);
-      const remaining = totalBudget - totalSpent;
-      const usedPercent =
-        totalBudget > 0 ? Math.round((totalSpent / totalBudget) * 100) : 0;
+    const monthStart = new Date(targetYear, targetMonth - 1, 1);
+    const monthEnd = new Date(targetYear, targetMonth, 0, 23, 59, 59, 999);
 
-      const lastMonthStart = new Date(targetYear, targetMonth - 2, 1);
-      const lastMonthEnd = new Date(
-        targetYear,
-        targetMonth - 1,
-        0,
-        23,
-        59,
-        59,
-        999,
-      );
-
-      const lastMonthTxns = await this.transactionsRepository.find({
+    const [budgets, transactions] = await Promise.all([
+      this.budgetsRepository.find({
+        where: { user_id, period_month: Between(monthStart, monthEnd) },
+        relations: { category: true },
+      }),
+      this.transactionsRepository.find({
         where: {
           user_id,
           type: TransactionType.EXPENSE,
-          transaction_date: Between(lastMonthStart, lastMonthEnd),
-        },
-      });
-      const lastMonthSpent = lastMonthTxns.reduce(
-        (s, t) => s + Number(t.amount),
-        0,
-      );
-      const spentChangePercent =
-        lastMonthSpent > 0
-          ? Math.round(((totalSpent - lastMonthSpent) / lastMonthSpent) * 100)
-          : 0;
-
-      return {
-        period: periodKey,
-        period_label: `${MONTH_LABELS[targetMonth - 1]} ${targetYear}`,
-        total_budget: {
-          amount: Math.round(totalBudget * 100) / 100,
-          period_label: `for ${MONTH_LABELS[targetMonth - 1]} ${targetYear}`,
-        },
-        total_spent: {
-          amount: Math.round(totalSpent * 100) / 100,
-          change_percent: spentChangePercent,
-          trend: spentChangePercent <= 0 ? 'down' : 'up',
-        },
-        remaining: {
-          amount: Math.round(remaining * 100) / 100,
-          used_percent: usedPercent,
-          is_over_budget: totalSpent > totalBudget,
-        },
-      };
-    } catch (error) {
-      throw new InternalServerErrorException(
-        'Failed to get budget planner summary',
-      );
-    }
-  }
-
-  public async getBudgetPlannerTable(user_id: string, dto: GetBudgetTableDto) {
-    try {
-      const now = new Date();
-      const targetMonth = dto.month ?? now.getMonth() + 1;
-      const targetYear = dto.year ?? now.getFullYear();
-      const periodKey = `${targetYear}-${String(targetMonth).padStart(2, '0')}`;
-      const monthStart = new Date(targetYear, targetMonth - 1, 1);
-      const monthEnd = new Date(targetYear, targetMonth, 0, 23, 59, 59, 999);
-
-      const budgetWhere: FindOptionsWhere<Budget> = {
-        user_id,
-        period_month: Between(monthStart, monthEnd),
-        ...(dto.category_id && { category_id: dto.category_id }),
-      };
-
-      const paginatedBudgets = await this.paginateService.paginateQuery(
-        dto,                          // carries page + limit
-        this.budgetsRepository,
-        { category: true },           // relations
-        budgetWhere,
-        { created_at: 'DESC' },       // order
-      );
-
-      if (!paginatedBudgets.data.length) {
-        return {
-          period: periodKey,
-          data: [],
-          meta: paginatedBudgets.meta,
-        };
-      }
-
-      const categoryIds = paginatedBudgets.data.map((b) => b.category_id);
-
-      const transactions = await this.transactionsRepository.find({
-        where: {
-          user_id,
-          type: TransactionType.EXPENSE,
-          category_id: In(categoryIds),
           transaction_date: Between(monthStart, monthEnd),
         },
-      });
+      }),
+    ]);
 
-      const spentMap = new Map<string, number>();
-      for (const txn of transactions) {
-        if (!txn.category_id) continue;
-        spentMap.set(
-          txn.category_id,
-          (spentMap.get(txn.category_id) ?? 0) + Number(txn.amount),
-        );
-      }
+    const totalBudget = budgets.reduce((s, b) => s + Number(b.limit_amount), 0);
+    const totalSpent = transactions.reduce((s, t) => s + Number(t.amount), 0);
+    const remaining = totalBudget - totalSpent;
+    const usedPercent =
+      totalBudget > 0 ? Math.round((totalSpent / totalBudget) * 100) : 0;
 
-      const rows = paginatedBudgets.data.map((budget) => {
-        const limitAmount = Number(budget.limit_amount);
-        const spent =
-          Math.round((spentMap.get(budget.category_id) ?? 0) * 100) / 100;
-        const remaining = Math.round((limitAmount - spent) * 100) / 100;
-        const usedPercent =
-          limitAmount > 0
-            ? Math.round((spent / limitAmount) * 1000) / 10
-            : spent > 0
-              ? 100
-              : 0;
-        const isOverBudget = spent > limitAmount;
+    // Derive last month from the parsed period (handles Jan → Dec of prev year)
+    const lastMonthDate = new Date(targetYear, targetMonth - 2, 1);
+    const lastMonthStart = new Date(lastMonthDate.getFullYear(), lastMonthDate.getMonth(), 1);
+    const lastMonthEnd = new Date(lastMonthDate.getFullYear(), lastMonthDate.getMonth() + 1, 0, 23, 59, 59, 999);
 
-        return {
-          id: budget.id,
-          category_id: budget.category_id,
-          category_name: budget.category?.name ?? 'Uncategorized',
-          category_icon: budget.category?.icon ?? 'default',
-          limit_amount: limitAmount,
-          spent_amount: spent,
-          remaining_amount: remaining,
-          used_percent: usedPercent,
-          is_over_budget: isOverBudget,
-          notes: budget.notes ?? null,
-          period_month: budget.period_month,
-        };
-      });
+    const lastMonthTxns = await this.transactionsRepository.find({
+      where: {
+        user_id,
+        type: TransactionType.EXPENSE,
+        transaction_date: Between(lastMonthStart, lastMonthEnd),
+      },
+    });
 
+    const lastMonthSpent = lastMonthTxns.reduce((s, t) => s + Number(t.amount), 0);
+    const spentChangePercent =
+      lastMonthSpent > 0
+        ? Math.round(((totalSpent - lastMonthSpent) / lastMonthSpent) * 100)
+        : 0;
+
+    return {
+      period: periodKey,
+      period_label: `${MONTH_LABELS[targetMonth - 1]} ${targetYear}`,
+      total_budget: {
+        amount: Math.round(totalBudget * 100) / 100,
+        period_label: `for ${MONTH_LABELS[targetMonth - 1]} ${targetYear}`,
+      },
+      total_spent: {
+        amount: Math.round(totalSpent * 100) / 100,
+        change_percent: spentChangePercent,
+        trend: spentChangePercent <= 0 ? 'down' : 'up',
+      },
+      remaining: {
+        amount: Math.round(remaining * 100) / 100,
+        used_percent: usedPercent,
+        is_over_budget: totalSpent > totalBudget,
+      },
+    };
+  } catch (error) {
+    throw new InternalServerErrorException('Failed to get budget planner summary');
+  }
+}
+
+public async getBudgetPlannerTable(user_id: string, dto: GetBudgetTableDto) {
+  try {
+    const now = new Date();
+    const periodKey =
+      dto.period ??
+      `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    const [targetYear, targetMonth] = periodKey.split('-').map(Number);
+
+    const monthStart = new Date(targetYear, targetMonth - 1, 1);
+    const monthEnd = new Date(targetYear, targetMonth, 0, 23, 59, 59, 999);
+
+    const budgetWhere: FindOptionsWhere<Budget> = {
+      user_id,
+      period_month: Between(monthStart, monthEnd),
+      ...(dto.category_id && { category_id: dto.category_id }),
+    };
+
+    const paginatedBudgets = await this.paginateService.paginateQuery(
+      dto,
+      this.budgetsRepository,
+      { category: true },
+      budgetWhere,
+      { created_at: 'DESC' },
+    );
+
+    if (!paginatedBudgets.data.length) {
       return {
         period: periodKey,
-        data: rows,
-        meta: paginatedBudgets?.meta,
+        data: [],
+        meta: paginatedBudgets.meta,
       };
-    } catch (error) {
-      throw new InternalServerErrorException(
-        'Failed to get budget planner table',
+    }
+
+    const categoryIds = paginatedBudgets.data.map((b) => b.category_id);
+
+    const transactions = await this.transactionsRepository.find({
+      where: {
+        user_id,
+        type: TransactionType.EXPENSE,
+        category_id: In(categoryIds),
+        transaction_date: Between(monthStart, monthEnd),
+      },
+    });
+
+    const spentMap = new Map<string, number>();
+    for (const txn of transactions) {
+      if (!txn.category_id) continue;
+      spentMap.set(
+        txn.category_id,
+        (spentMap.get(txn.category_id) ?? 0) + Number(txn.amount),
       );
     }
+
+    const rows = paginatedBudgets.data.map((budget) => {
+      const limitAmount = Number(budget.limit_amount);
+      const spent = Math.round((spentMap.get(budget.category_id) ?? 0) * 100) / 100;
+      const remaining = Math.round((limitAmount - spent) * 100) / 100;
+      const usedPercent =
+        limitAmount > 0
+          ? Math.round((spent / limitAmount) * 1000) / 10
+          : spent > 0
+            ? 100
+            : 0;
+
+      return {
+        id: budget.id,
+        category_id: budget.category_id,
+        category_name: budget.category?.name ?? 'Uncategorized',
+        category_icon: budget.category?.icon ?? 'default',
+        limit_amount: limitAmount,
+        spent_amount: spent,
+        remaining_amount: remaining,
+        used_percent: usedPercent,
+        is_over_budget: spent > limitAmount,
+        notes: budget.notes ?? null,
+        period_month: budget.period_month,
+      };
+    });
+
+    return {
+      period: periodKey,
+      data: rows,
+      meta: paginatedBudgets?.meta,
+    };
+  } catch (error) {
+    throw new InternalServerErrorException('Failed to get budget planner table');
   }
+}
 
   public async getBudgetInsights(user_id: string, dto: GetBudgetInsightsDto) {
     try {

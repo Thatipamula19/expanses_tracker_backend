@@ -1,32 +1,20 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsInt, IsOptional, IsString, Max, Min, Matches } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class GetBudgetPlannerDto {
   @ApiProperty({
-    type: Number,
+    type: String,
     required: false,
-    description: 'Month (1-12). Defaults to current month.',
-    default: new Date().getMonth() + 1,
+    description: 'Period in YYYY-MM format (e.g. 2026-01). Defaults to current month.',
+    default: `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`,
   })
   @IsOptional()
-  @IsInt()
-  @Min(1)
-  @Max(12)
-  @Type(() => Number)
-  month?: number = new Date().getMonth() + 1;
-
-  @ApiProperty({
-    type: Number,
-    required: false,
-    description: 'Year e.g. 2026. Defaults to current year.',
-    default: new Date().getFullYear(),
+  @IsString()
+  @Matches(/^\d{4}-(0[1-9]|1[0-2])$/, {
+    message: 'period must be in YYYY-MM format (e.g. 2026-01)',
   })
-  @IsOptional()
-  @IsInt()
-  @Min(2000)
-  @Type(() => Number)
-  year?: number = new Date().getFullYear();
+  period?: string;
 }
 
 export class GetBudgetTableDto extends GetBudgetPlannerDto {

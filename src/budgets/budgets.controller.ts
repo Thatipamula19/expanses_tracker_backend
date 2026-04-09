@@ -25,23 +25,13 @@ import { GetBudgetInsightsDto } from './dtos/get-budget-insights.dto';
 @ApiBearerAuth('access-token')
 @Controller('budgets')
 export class BudgetsController {
-  constructor(private readonly budgetsService: BudgetsService) {}
+  constructor(private readonly budgetsService: BudgetsService) { }
 
   @Get('/')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get all budgets for current month' })
   async getBudgets(@ActiveUser('sub') user_id: string) {
     return await this.budgetsService.getBudgets(user_id);
-  }
-
-  @Get('/:budget_id')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Get budget by ID' })
-  async getBudget(
-    @ActiveUser('sub') user_id: string,
-    @Param('budget_id') budget_id: string,
-  ) {
-    return await this.budgetsService.getBudget(user_id, budget_id);
   }
 
   @Get('get-statistics')
@@ -76,6 +66,16 @@ export class BudgetsController {
     return this.budgetsService.getBudgetInsights(user_id, dto);
   }
 
+  @Get('/:budget_id')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get budget by ID' })
+  async getBudget(
+    @ActiveUser('sub') user_id: string,
+    @Param('budget_id') budget_id: string,
+  ) {
+    return await this.budgetsService.getBudget(user_id, budget_id);
+  }
+
   @Post('/add')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Add budget' })
@@ -102,7 +102,7 @@ export class BudgetsController {
   async deleteBudget(
     @ActiveUser('sub') user_id: string,
     @Param('budget_id') budget_id: string,
-    ) {
+  ) {
     return await this.budgetsService.deleteBudget(user_id, budget_id);
   }
 }

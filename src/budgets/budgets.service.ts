@@ -110,28 +110,20 @@ export class BudgetsService {
       return {
         period: periodKey,
         period_label: `${MONTH_LABELS[targetMonth - 1]} ${targetYear}`,
-        statistics: [
-          {
-            id: 1,
-            title: 'Total Budget',
-            amount: Math.round(totalBudget * 100) / 100,
-            period_label: `for ${MONTH_LABELS[targetMonth - 1]} ${targetYear}`,
-          },
-          {
-            id: 2,
-            title: 'Total Spent',
-            amount: Math.round(totalSpent * 100) / 100,
-            change_percent: spentChangePercent,
-            trend: spentChangePercent <= 0 ? 'down' : 'up',
-          },
-          {
-            id: 3,
-            title: 'Remaining',
-            amount: Math.round(remaining * 100) / 100,
-            used_percent: usedPercent,
-            is_over_budget: totalSpent > totalBudget,
-          }
-        ],
+        total_budget: {
+          amount: Math.round(totalBudget * 100) / 100,
+          period_label: `for ${MONTH_LABELS[targetMonth - 1]} ${targetYear}`,
+        },
+        total_spent: {
+          amount: Math.round(totalSpent * 100) / 100,
+          change_percent: spentChangePercent,
+          trend: spentChangePercent <= 0 ? 'down' : 'up',
+        },
+        remaining: {
+          amount: Math.round(remaining * 100) / 100,
+          used_percent: usedPercent,
+          is_over_budget: totalSpent > totalBudget,
+        },
       };
     } catch (error) {
       throw new InternalServerErrorException(
@@ -231,110 +223,110 @@ export class BudgetsService {
     }
   }
 
-public async getBudgetInsights(user_id: string, dto: GetBudgetInsightsDto) {
-  try {
-    const now = new Date();
-    const trendMonths = Number(dto.trend_months ?? 6);
+  public async getBudgetInsights(user_id: string, dto: GetBudgetInsightsDto) {
+    try {
+      const now = new Date();
+      const trendMonths = Number(dto.trend_months ?? 6);
 
-    const MONTH_LABELS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-    const periods: { key: string; label: string; year: number; month: number }[] = [];
+      const periods: { key: string; label: string; year: number; month: number }[] = [];
 
-    for (let i = trendMonths - 1; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const year = d.getFullYear();
-      const month = d.getMonth();
-      periods.push({
-        key: `${year}-${String(month + 1).padStart(2, '0')}`,
-        label: MONTH_LABELS[month],
-        year,
-        month,
+      for (let i = trendMonths - 1; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const year = d.getFullYear();
+        const month = d.getMonth();
+        periods.push({
+          key: `${year}-${String(month + 1).padStart(2, '0')}`,
+          label: MONTH_LABELS[month],
+          year,
+          month,
+        });
+      }
+
+      const periodDates = periods.map((p) => new Date(p.year, p.month, 1));
+
+      const trendStart = new Date(periods[0].year, periods[0].month, 1);
+      const lastPeriod = periods[periods.length - 1];
+      const trendEnd = new Date(lastPeriod.year, lastPeriod.month + 1, 0, 23, 59, 59, 999);
+
+      const [budgets, transactions] = await Promise.all([
+        this.budgetsRepository.find({
+          where: {
+            user_id,
+            period_month: In(periodDates),
+          },
+          relations: { category: true },
+        }),
+        this.transactionsRepository.find({
+          where: {
+            user_id,
+            type: TransactionType.EXPENSE,
+            transaction_date: Between(trendStart, trendEnd),
+          },
+          relations: { category: true },
+        }),
+      ]);
+
+      const budgetByPeriod = new Map<string, number>();
+      for (const b of budgets) {
+        const d = new Date(b.period_month);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        budgetByPeriod.set(key, (budgetByPeriod.get(key) ?? 0) + Number(b.limit_amount));
+      }
+
+      const spentByPeriod = new Map<string, number>();
+      for (const txn of transactions) {
+        const d = new Date(txn.transaction_date);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        spentByPeriod.set(key, (spentByPeriod.get(key) ?? 0) + Number(txn.amount));
+      }
+
+      const budget_vs_spending = periods.map((p) => ({
+        month: p.label,
+        period: p.key,
+        budget_amount: Math.round((budgetByPeriod.get(p.key) ?? 0) * 100) / 100,
+        spent_amount: Math.round((spentByPeriod.get(p.key) ?? 0) * 100) / 100,
+      }));
+
+      const currentPeriodKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const currentBudgets = budgets.filter((b) => {
+        const d = new Date(b.period_month);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        return key === currentPeriodKey;
       });
-    }
 
-    const periodDates = periods.map((p) => new Date(p.year, p.month, 1));
+      const totalBudget = currentBudgets.reduce((s, b) => s + Number(b.limit_amount), 0);
 
-    const trendStart = new Date(periods[0].year, periods[0].month, 1);
-    const lastPeriod = periods[periods.length - 1];
-    const trendEnd = new Date(lastPeriod.year, lastPeriod.month + 1, 0, 23, 59, 59, 999);
+      const category_allocation = currentBudgets
+        .map((b) => ({
+          category_id: b.category_id,
+          category_name: b.category?.name ?? 'Uncategorized',
+          budget_amount: Number(b.limit_amount),
+          percentage:
+            totalBudget > 0
+              ? Math.round((Number(b.limit_amount) / totalBudget) * 1000) / 10
+              : 0,
+        }))
+        .sort((a, b) => b.budget_amount - a.budget_amount);
 
-    const [budgets, transactions] = await Promise.all([
-      this.budgetsRepository.find({
-        where: {
-          user_id,
-          period_month: In(periodDates),
+      return {
+        budget_vs_spending: {
+          title: 'Budget vs Spending Over Time',
+          subtitle: `Monthly trend (last ${trendMonths} months)`,
+          data: budget_vs_spending,
         },
-        relations: { category: true },
-      }),
-      this.transactionsRepository.find({
-        where: {
-          user_id,
-          type: TransactionType.EXPENSE,
-          transaction_date: Between(trendStart, trendEnd),
+        category_allocation: {
+          title: 'Category-wise Budget Allocation',
+          period: currentPeriodKey,
+          total_budget: Math.round(totalBudget * 100) / 100,
+          data: category_allocation,
         },
-        relations: { category: true },
-      }),
-    ]);
-
-    const budgetByPeriod = new Map<string, number>();
-    for (const b of budgets) {
-      const d = new Date(b.period_month);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      budgetByPeriod.set(key, (budgetByPeriod.get(key) ?? 0) + Number(b.limit_amount));
+      };
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to get budget insights');
     }
-
-    const spentByPeriod = new Map<string, number>();
-    for (const txn of transactions) {
-      const d = new Date(txn.transaction_date);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      spentByPeriod.set(key, (spentByPeriod.get(key) ?? 0) + Number(txn.amount));
-    }
-
-    const budget_vs_spending = periods.map((p) => ({
-      month: p.label,
-      period: p.key,
-      budget_amount: Math.round((budgetByPeriod.get(p.key) ?? 0) * 100) / 100,
-      spent_amount: Math.round((spentByPeriod.get(p.key) ?? 0) * 100) / 100,
-    }));
-
-    const currentPeriodKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    const currentBudgets = budgets.filter((b) => {
-      const d = new Date(b.period_month);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      return key === currentPeriodKey;
-    });
-
-    const totalBudget = currentBudgets.reduce((s, b) => s + Number(b.limit_amount), 0);
-
-    const category_allocation = currentBudgets
-      .map((b) => ({
-        category_id: b.category_id,
-        category_name: b.category?.name ?? 'Uncategorized',
-        budget_amount: Number(b.limit_amount),
-        percentage:
-          totalBudget > 0
-            ? Math.round((Number(b.limit_amount) / totalBudget) * 1000) / 10
-            : 0,
-      }))
-      .sort((a, b) => b.budget_amount - a.budget_amount);
-
-    return {
-      budget_vs_spending: {
-        title: 'Budget vs Spending Over Time',
-        subtitle: `Monthly trend (last ${trendMonths} months)`,
-        data: budget_vs_spending,
-      },
-      category_allocation: {
-        title: 'Category-wise Budget Allocation',
-        period: currentPeriodKey,
-        total_budget: Math.round(totalBudget * 100) / 100,
-        data: category_allocation,
-      },
-    };
-  } catch (error) {
-    throw new InternalServerErrorException('Failed to get budget insights');
   }
-}
 
   async getBudgets(user_id: string) {
     const now = new Date();
@@ -349,7 +341,7 @@ public async getBudgetInsights(user_id: string, dto: GetBudgetInsightsDto) {
       });
       return {
         message: 'Budgets retrieved successfully',
-        budgets : budgets.map((b) => this.formatBudget(b)),
+        budgets: budgets.map((b) => this.formatBudget(b)),
       };
     } catch (error) {
       throw error;

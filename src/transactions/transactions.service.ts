@@ -129,7 +129,7 @@ export class TransactionsService {
         total_expense: {
           amount: current.expense,
           change_percentage: expenseChange,
-          trend: expenseChange <= 0 ? 'up' : 'down',
+          trend: expenseChange >= 0 ? 'up' : 'down',
         },
         savings_rate: {
           percentage: currentSavingsRate,
@@ -643,7 +643,7 @@ export class TransactionsService {
       id: transaction.id,
       title: transaction.title,
       description: transaction.description,
-      amount: transaction.amount,
+      amount: Number(transaction.amount),
       type: transaction.type,
       transaction_date: transaction.transaction_date,
       currency: transaction.currency,

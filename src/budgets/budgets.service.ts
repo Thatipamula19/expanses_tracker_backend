@@ -139,14 +139,6 @@ public async getBudgetPlannerTable(user_id: string, dto: GetBudgetTableDto) {
       { created_at: 'DESC' },
     );
 
-    if (!paginatedBudgets.data.length) {
-      return {
-        period: periodKey,
-        data: [],
-        meta: paginatedBudgets.meta,
-      };
-    }
-
     const categoryIds = paginatedBudgets.data.map((b) => b.category_id);
 
     const transactions = await this.transactionsRepository.find({
@@ -234,7 +226,7 @@ public async getBudgetPlannerTable(user_id: string, dto: GetBudgetTableDto) {
         this.budgetsRepository.find({
           where: {
             user_id,
-            period_month: In(periodDates),
+            period_month: Between(trendStart, trendEnd),
           },
           relations: { category: true },
         }),
@@ -247,7 +239,6 @@ public async getBudgetPlannerTable(user_id: string, dto: GetBudgetTableDto) {
           relations: { category: true },
         }),
       ]);
-
       const budgetByPeriod = new Map<string, number>();
       for (const b of budgets) {
         const d = new Date(b.period_month);
@@ -265,8 +256,8 @@ public async getBudgetPlannerTable(user_id: string, dto: GetBudgetTableDto) {
       const budget_vs_spending = periods.map((p) => ({
         month: p.label,
         period: p.key,
-        budget_amount: Math.round((budgetByPeriod.get(p.key) ?? 0) * 100) / 100,
-        spent_amount: Math.round((spentByPeriod.get(p.key) ?? 0) * 100) / 100,
+        "Budget (₹)": Math.round((budgetByPeriod.get(p.key) ?? 0) * 100) / 100,
+        "Spent (₹)": Math.round((spentByPeriod.get(p.key) ?? 0) * 100) / 100,
       }));
 
       const currentPeriodKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -281,7 +272,8 @@ public async getBudgetPlannerTable(user_id: string, dto: GetBudgetTableDto) {
       const category_allocation = currentBudgets
         .map((b) => ({
           category_id: b.category_id,
-          category_name: b.category?.name ?? 'Uncategorized',
+          name: b.category?.name ?? 'Uncategorized',
+          category_icon: b.category?.icon ?? 'default',
           budget_amount: Number(b.limit_amount),
           percentage:
             totalBudget > 0

@@ -74,8 +74,8 @@ export class AnalyticsService {
           return {
             month: MONTH_LABELS[monthIdx],
             period: key,
-            income: Math.round(val.income),
-            expense: Math.round(val.expense),
+            Income: Math.round(val.income),
+            Expense: Math.round(val.expense),
           };
         },
       );
@@ -114,7 +114,7 @@ export class AnalyticsService {
       const top5Total = top5.reduce((s, c) => s + c.amount, 0);
       const top5Expenses = top5.map((c) => ({
         category_id: c.category_id,
-        category_name: c.category_name,
+        name: c.category_name,
         amount: c.amount,
         percentage:
           top5Total > 0 ? Math.round((c.amount / top5Total) * 1000) / 10 : 0,

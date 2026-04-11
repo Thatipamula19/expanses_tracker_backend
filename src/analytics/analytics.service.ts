@@ -79,7 +79,10 @@ export class AnalyticsService {
           };
         },
       );
-
+      const chart_keys = {
+        x_axis: "month",
+        lines: ["Income", "Expense"],
+      };
       const categorySpendMap = new Map<
         string,
         {
@@ -141,6 +144,7 @@ export class AnalyticsService {
           title: 'Income vs Expense',
           subtitle: 'Monthly trend',
           data: income_vs_expense,
+          chart_keys,
         },
         spending_by_category: {
           title: 'Spending by Category',

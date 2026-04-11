@@ -281,12 +281,16 @@ public async getBudgetPlannerTable(user_id: string, dto: GetBudgetTableDto) {
               : 0,
         }))
         .sort((a, b) => b.budget_amount - a.budget_amount);
-
+      const chart_keys = {
+        x_axis: "month",
+        lines: ["Budget (₹)", "Spent (₹)"],
+      };
       return {
         budget_vs_spending: {
           title: 'Budget vs Spending Over Time',
           subtitle: `Monthly trend (last ${trendMonths} months)`,
           data: budget_vs_spending,
+          chart_keys
         },
         category_allocation: {
           title: 'Category-wise Budget Allocation',

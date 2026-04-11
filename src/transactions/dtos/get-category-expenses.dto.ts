@@ -13,7 +13,7 @@ export class GetCategoryWiseExpensesDto {
   @Min(1)
   @Max(12)
   @Type(() => Number)
-  month?: number;
+  month?: number = new Date().getMonth() + 1;
 
   @ApiProperty({
     type: Number,
@@ -24,5 +24,5 @@ export class GetCategoryWiseExpensesDto {
   @IsInt()
   @Min(2000)
   @Type(() => Number)
-  year?: number;
+  year?: number = new Date().getFullYear();
 }

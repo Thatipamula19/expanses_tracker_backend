@@ -230,12 +230,15 @@ export class TransactionsService {
           const month = parseInt(key.split('-')[1], 10) - 1; // 0-indexed for label
           return {
             month: MONTH_LABELS[month],
-            "Income": Math.round(val.income),
-            "Expense": Math.round(val.expense),
+            Income: Math.round(val.income),
+            Expense: Math.round(val.expense),
           };
         },
       );
-
+      const chart_keys = {
+        x_axis: "month",
+        lines: ["Income", "Expense"],
+      };
       const categoryMap = new Map<string, { name: string; amount: number }>();
 
       for (const txn of pieTxns) {
@@ -267,6 +270,7 @@ export class TransactionsService {
           title: 'Income vs Expense',
           subtitle: `Monthly trend (last ${trendMonths} months)`,
           data: income_vs_expense,
+          chart_keys,
         },
         expense_breakdown: {
           title: 'Expense Breakdown',
@@ -297,7 +301,7 @@ export class TransactionsService {
 
       const [budgets, transactions, latestTxns] = await Promise.all([
         this.budgetRepository.find({
-          where: { user_id, period_month: monthStart },
+          where: { user_id, period_month: Between(monthStart, monthEnd) },
           relations: { category: true },
         }),
         this.transactionRepository.find({
@@ -343,7 +347,7 @@ export class TransactionsService {
       }
 
       const categoryData = budgets.map((budget) => {
-        const limitAmount = Number(budget.limit_amount);
+        const limitAmount = budget?.limit_amount ?? 0;
 
         const spentEntry = spentMap.get(budget.category_id);
         const actualSpent = spentEntry?.spent ?? 0;
@@ -364,7 +368,7 @@ export class TransactionsService {
           category_icon: budget.category?.icon ?? 'default',
           budget_id: budget.id,
           has_budget: true,
-          limit_amount: limitAmount,
+          limit_amount: Number(budget.limit_amount),
           spent_amount: Math.round(actualSpent * 100) / 100,
           remaining_amount: Math.round((limitAmount - actualSpent) * 100) / 100,
           spent_percentage: spentPercentage,

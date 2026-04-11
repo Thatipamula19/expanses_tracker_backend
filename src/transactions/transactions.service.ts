@@ -169,7 +169,7 @@ export class TransactionsService {
       const pieStart = new Date(targetYear, targetMonth, 1);
       const pieEnd = new Date(targetYear, targetMonth + 1, 0, 23, 59, 59, 999);
 
-      const [trendTxns, pieTxns, latestTxns] = await Promise.all([
+      const [trendTxns, pieTxns] = await Promise.all([
         this.transactionRepository.find({
           where: { user_id, transaction_date: Between(trendStart, trendEnd) },
           relations: { category: true },
@@ -182,15 +182,7 @@ export class TransactionsService {
             transaction_date: Between(pieStart, pieEnd),
           },
           relations: { category: true },
-        }),
-        this.transactionRepository.find({
-          where: {
-            user_id,
-          },
-          order: { transaction_date: 'DESC' },
-          relations: { category: true },
-          take: 5,
-        }),
+        })
       ]);
 
       const monthMap = new Map<string, { income: number; expense: number }>();
@@ -238,8 +230,8 @@ export class TransactionsService {
           const month = parseInt(key.split('-')[1], 10) - 1; // 0-indexed for label
           return {
             month: MONTH_LABELS[month],
-            income: Math.round(val.income),
-            expense: Math.round(val.expense),
+            "Income": Math.round(val.income),
+            "Expense": Math.round(val.expense),
           };
         },
       );
@@ -262,7 +254,7 @@ export class TransactionsService {
       const expense_breakdown = [...categoryMap.entries()]
         .sort((a, b) => b[1].amount - a[1].amount) // largest first
         .map(([, val]) => ({
-          category: val.name,
+          name: val.name,
           amount: Math.round(val.amount),
           percentage:
             totalExpense > 0
@@ -281,8 +273,7 @@ export class TransactionsService {
           subtitle: `${MONTH_LABELS[targetMonth]} ${targetYear}'s spending by category`,
           total_expense: Math.round(totalExpense),
           data: expense_breakdown,
-        },
-        latest_transactions: latestTxns?.map((txn) => (this.formatTransaction(txn))) ?? [],
+        }
       };
     } catch (error) {
       throw new InternalServerErrorException(
@@ -304,7 +295,7 @@ export class TransactionsService {
       const monthStart = new Date(targetYear, targetMonth - 1, 1);
       const monthEnd = new Date(targetYear, targetMonth, 0, 23, 59, 59, 999);
 
-      const [budgets, transactions] = await Promise.all([
+      const [budgets, transactions, latestTxns] = await Promise.all([
         this.budgetRepository.find({
           where: { user_id, period_month: monthStart },
           relations: { category: true },
@@ -316,6 +307,14 @@ export class TransactionsService {
             transaction_date: Between(monthStart, monthEnd),
           },
           relations: { category: true },
+        }),
+        this.transactionRepository.find({
+          where: {
+            user_id,
+          },
+          order: { transaction_date: 'DESC' },
+          relations: { category: true },
+          take: 5,
         }),
       ]);
 
@@ -408,6 +407,7 @@ export class TransactionsService {
           on_track_count: categoryData.filter((c) => !c.is_over_budget).length,
         },
         categories: categoryData,
+        latest_transactions: latestTxns?.map((txn) => (this.formatTransaction(txn))) ?? [],
       };
     } catch (error) {
       throw new InternalServerErrorException(

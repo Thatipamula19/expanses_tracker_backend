@@ -14,6 +14,7 @@ import { GoalContribution } from './entities/goal-contribution.entity';
 import { AddGoalDto } from './dtos/add-goal-dto';
 import { UpdateGoalDto } from './dtos/update-goal-dto';
 import { PaginationProvider } from '@/common/pagination/pagination.provider';
+import { UpdateContributionDto } from './dtos/update-goal-contribution.dto';
 
 @Injectable()
 export class GoalsService {
@@ -55,7 +56,7 @@ export class GoalsService {
         order,
       );
 
-      const cards = paginated.data.map((goal) => {
+      const goals = paginated.data.map((goal) => {
         const targetAmount = Number(goal.target_amount);
         const savedAmount = Number(goal.saved_amount);
         const remainingAmount = Math.max(targetAmount - savedAmount, 0);
@@ -66,9 +67,11 @@ export class GoalsService {
 
         return {
           goal_id: goal.id,
-          name: goal.name,
+          goal_name: goal.goal_name,
           status: goal.status,
           category_name: goal.category?.name ?? null,
+          category_id: goal.category_id,
+          category_icon: goal.category?.icon ?? null,
           target_amount: targetAmount,
           saved_amount: savedAmount,
           remaining_amount: remainingAmount,
@@ -83,11 +86,11 @@ export class GoalsService {
         total_goals: allGoals.length,
         completed_count: allGoals.filter((g) => g.status === GoalStatus.COMPLETED).length,
         ongoing_count: allGoals.filter((g) => g.status === GoalStatus.ONGOING).length,
-        ...paginated,
-        data: cards,
+        meta: paginated?.meta,
+        goals: goals,
       };
     } catch (error) {
-      throw new InternalServerErrorException('Failed to get goal cards');
+      throw new InternalServerErrorException('Failed to get goals');
     }
   }
 
@@ -122,7 +125,7 @@ export class GoalsService {
 
         return {
           goal_id: goal.id,
-          name: goal.name,
+          goal_name: goal.goal_name,
           status: goal.status,
           target_amount: targetAmount,
           saved_amount: savedAmount,
@@ -217,6 +220,37 @@ export class GoalsService {
     return contribution;
   }
 
+  public async updateContribution(
+    user_id: string,
+    updateContributionDto: UpdateContributionDto,
+  ) {
+    const contribution = await this.contributionRepository.findOne({
+      where: { id: updateContributionDto.contribution_id },
+      relations: { goal: true },
+    });
+    if (!contribution) throw new NotFoundException('Contribution not found');
+    if (contribution.goal.user_id !== user_id)
+      throw new ForbiddenException(
+        'Not authorized to update this contribution',
+      );
+    contribution.amount = updateContributionDto.amount;
+    await this.contributionRepository.save(contribution);
+    return contribution;
+  }
+
+  public async getContribution(user_id: string, contribution_id: string) {
+    const contribution = await this.contributionRepository.findOne({
+      where: { id: contribution_id },
+      relations: { goal: true },
+    });
+    if (!contribution) throw new NotFoundException('Contribution not found');
+    if (contribution.goal.user_id !== user_id)
+      throw new ForbiddenException(
+        'Not authorized to view this contribution',
+      );
+    return contribution;
+  }
+
   public async removeContribution(user_id: string, contribution_id: string) {
     const contribution = await this.contributionRepository.findOne({
       where: { id: contribution_id },
@@ -259,7 +293,7 @@ export class GoalsService {
 
   public async addGoal(user_id: string, addGoalDto: AddGoalDto) {
     try {
-      const goal = this.goalRepository.create({ ...addGoalDto, user_id });
+      const goal = await this.goalRepository.create({ ...addGoalDto, user_id });
       const savedGoal = await this.goalRepository.save(goal);
       return {
         message: 'Goal added successfully',
@@ -272,12 +306,11 @@ export class GoalsService {
 
   public async updateGoal(
     user_id: string,
-    goal_id: string,
     updateGoalDto: UpdateGoalDto,
   ) {
     try {
       const goal = await this.goalRepository.findOne({
-        where: { id: goal_id, user_id },
+        where: { id: updateGoalDto?.goal_id, user_id },
       });
       if (!goal) throw new NotFoundException('Goal not found');
       if (goal.user_id !== user_id)

@@ -27,7 +27,7 @@ export class Goal {
   category_id: string;
 
   @Column({ type: 'varchar', length: 200 })
-  name: string;
+  goal_name: string;
 
   @Column({ type: 'decimal', precision: 15, scale: 2 })
   target_amount: number;
@@ -45,7 +45,7 @@ export class Goal {
   @Column({
     type: 'enum',
     enum: GoalStatus,
-    default: GoalStatus.ONGOING,
+    default: GoalStatus.ONGOING
   })
   status: GoalStatus;
 

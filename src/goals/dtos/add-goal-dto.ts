@@ -1,6 +1,6 @@
 import { GoalStatus } from '@/common/enums';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { IsDate, IsEnum, IsNotEmpty, IsNumber, IsString } from 'class-validator';
 
 export class AddGoalDto {
   @ApiProperty({ description: 'Goal Name' })
@@ -23,16 +23,16 @@ export class AddGoalDto {
 
   @ApiProperty({ description: 'Start Date' })
   @IsNotEmpty({ message: 'Start Date is required' })
-  @IsString({ message: 'Start Date must be a string' })
-  start_date: string;
+  @IsDate({ message: 'Start Date must be a valid date' })
+  start_date: Date;
 
   @ApiProperty({ description: 'End Date' })
   @IsNotEmpty({ message: 'End Date is required' })
-  @IsString({ message: 'End Date must be a string' })
-  end_date: string;
+  @IsDate({ message: 'End Date must be a valid date' })
+  end_date: Date;
 
   @ApiProperty({ description: 'Goal Status' })
   @IsNotEmpty({ message: 'Goal Status is required' })
-  @IsString({ message: 'Goal Status must be a string' })
-  goal_status: GoalStatus;
+  @IsEnum(GoalStatus, { message: 'Goal Status must be a valid goal status' })
+  status: GoalStatus;
 }

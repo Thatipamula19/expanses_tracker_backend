@@ -17,11 +17,12 @@ import { GetGoalsDashboardDto } from './dtos/get-goals-dashboard.dto';
 import { AddContributionDto } from './dtos/add-goal-contribution.dto';
 import { AddGoalDto } from './dtos/add-goal-dto';
 import { UpdateGoalDto } from './dtos/update-goal-dto';
+import { UpdateContributionDto } from './dtos/update-goal-contribution.dto';
 
 @ApiBearerAuth('access-token')
 @Controller('goals')
 export class GoalsController {
-  constructor(private readonly goalsService: GoalsService) {}
+  constructor(private readonly goalsService: GoalsService) { }
 
   @Get('get-filtered-goals')
   @HttpCode(HttpStatus.OK)
@@ -53,15 +54,14 @@ export class GoalsController {
     return this.goalsService.addGoal(user_id, addGoalDto);
   }
 
-  @Put('update/:goal_id')
+  @Put('update')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Update a goal' })
   async updateGoal(
     @ActiveUser('sub') user_id: string,
-    @Param('goal_id') goal_id: string,
     @Body() updateGoalDto: UpdateGoalDto,
   ) {
-    return this.goalsService.updateGoal(user_id, goal_id, updateGoalDto);
+    return this.goalsService.updateGoal(user_id, updateGoalDto);
   }
 
   @Get('all')
@@ -91,7 +91,7 @@ export class GoalsController {
     return this.goalsService.removeGoal(user_id, goal_id);
   }
 
-  @Post('contribution')
+  @Post('add-contribution')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Add contribution to a goal' })
   async addContribution(
@@ -99,6 +99,28 @@ export class GoalsController {
     @Body() addContributionDto: AddContributionDto,
   ) {
     return this.goalsService.addContribution(user_id, addContributionDto);
+  }
+
+  @Put('update-contribution')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Update contribution to a goal' })
+  async updateContribution(
+    @ActiveUser('sub') user_id: string,
+    @Body() updateContributionDto: UpdateContributionDto,
+  ) {
+    return this.goalsService.updateContribution(
+      user_id,
+      updateContributionDto);
+  }
+
+  @Get('get-contribution/:contribution_id')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get contribution from a goal' })
+  async getContribution(
+    @ActiveUser('sub') user_id: string,
+    @Param('contribution_id') contribution_id: string,
+  ) {
+    return this.goalsService.getContribution(user_id, contribution_id);
   }
 
   @Delete('/delete/:contribution_id')

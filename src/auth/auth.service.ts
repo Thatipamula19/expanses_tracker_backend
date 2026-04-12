@@ -4,6 +4,7 @@ import {
   Inject,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import authConfig from './config/auth.config';
@@ -45,7 +46,7 @@ export class AuthService {
   public async login(email: string, password: string) {
     const user = await this.userService.findOneByEmail(email);
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new NotFoundException(`User with email ${email} not found`);
     }
 
     const isPasswordValid = await this.hashingProvider.comparePassword(
@@ -53,7 +54,7 @@ export class AuthService {
       user.password,
     );
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new NotFoundException(`password is incorrect`);
     }
 
     return {
@@ -149,7 +150,7 @@ export class AuthService {
       resetLink,
     );
 
-    return { message: 'If the email exists, a reset link has been sent.' };
+    return { message: `Password reset link sent to ${user.email}` };
   }
 
   public async resetPassword(resetPasswordDto: ResetPasswordDto) {
@@ -247,6 +248,11 @@ export class AuthService {
     await this.userRepository.update(user.id, {
       password: await this.hashingProvider.hashPassword(new_password),
     });
+
+    await this.mailService.sendPasswordResetSuccessMail(
+      user.email,
+      user.user_name ?? 'there',
+    );
 
     return {
       ...(await this.generateToken(user)),

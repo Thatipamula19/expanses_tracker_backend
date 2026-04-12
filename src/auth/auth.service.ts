@@ -97,7 +97,7 @@ export class AuthService {
       );
       const user = await this.userService.findOneById(sub);
       if (!user) {
-        throw new UnauthorizedException('User not found');
+        throw new NotFoundException('User not found');
       }
 
       return await this.generateToken(user);
@@ -114,7 +114,7 @@ export class AuthService {
     const user = await this.userRepository.findOne({ where: { email } });
 
     if (!user) {
-      throw new UnauthorizedException(`User with email ${email} not found`);
+      throw new NotFoundException(`User with email ${email} not found`);
     }
 
     await this.passwordResetTokenRepository.update(
@@ -261,6 +261,24 @@ export class AuthService {
       email: user.email,
       message: 'Password changed successfully',
     };
+  }
+
+  public async logout(user_id: string) {
+    await this.userRepository.update(user_id, { refresh_tokens: [] });
+    return { message: 'Logout successfully' };
+  }
+
+  public async verifyToken(token: string) {
+    try {
+      const payload = await this.jwtService.verifyAsync(token, {
+        secret: this.authConfiguration.secret,
+        audience: this.authConfiguration.audience,
+        issuer: this.authConfiguration.issuer,
+      });
+      return payload;
+    } catch (error) {
+      throw error;
+    }
   }
 
   private async signToken<T>(userId: string, expiresIn: number, payload?: T) {

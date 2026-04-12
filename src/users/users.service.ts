@@ -4,6 +4,7 @@ import {
   HttpStatus,
   Inject,
   Injectable,
+  NotFoundException,
   RequestTimeoutException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -14,6 +15,7 @@ import { PaginationProvider } from '@/common/pagination/pagination.provider';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { userAlreadyExitsException } from '@/common/CoustomException/user-already-exits.exception';
 import { HashingProvider } from '@/auth/provider/hashing.provider';
+import { UpdateUserProfileDto } from './dtos/update-user.dto';
 @Injectable()
 export class UsersService {
   constructor(
@@ -23,7 +25,7 @@ export class UsersService {
 
     @Inject(forwardRef(() => HashingProvider))
     private readonly hashProvider: HashingProvider,
-  ) {}
+  ) { }
 
   public async getAllUsers(pageQueryDto: PaginationQueryDto) {
     try {
@@ -33,6 +35,24 @@ export class UsersService {
       );
     } catch (error) {
       if ((error.code = 'ECONNREFUSED')) {
+        throw new RequestTimeoutException(
+          'An error has occurred, please try again later',
+          {
+            description: 'Could not connect to database',
+          },
+        );
+      }
+    }
+  }
+
+  public async getUserProfile(user_id: string) {
+    try {
+      return await this.userRepository.findOne({
+        where: { id: user_id },
+        select: ['id', 'email', 'role', 'user_name', 'avatar_url', 'preferred_currency', 'language', 'monthly_start_date', 'notify_budget_alerts', 'notify_goal_reminders', 'notify_weekly_summary'],
+      });
+    } catch (error) {
+      if (error.code === 'ECONNREFUSED') {
         throw new RequestTimeoutException(
           'An error has occurred, please try again later',
           {
@@ -82,6 +102,34 @@ export class UsersService {
       }
 
       throw error;
+    }
+  }
+
+  public async updateUserProfile(user_id: string, updateUserProfileDto: UpdateUserProfileDto) {
+    try {
+
+      const user = await this.userRepository.findOne({ where: { id: user_id } });
+
+      if (!user) {
+        throw new NotFoundException(`User with id ${user_id} not found`);
+      }
+      const updatedUser = await this.userRepository.update(user_id, updateUserProfileDto);
+      return {
+        user_id: user.id,
+        user_name: user.user_name,
+        email: user.email,
+        role: user.role,
+        message: 'User updated successfully',
+      };
+    } catch (error) {
+      if (error.code === 'ECONNREFUSED') {
+        throw new RequestTimeoutException(
+          'An error has occurred, please try again later',
+          {
+            description: 'Could not connect to database',
+          },
+        );
+      }
     }
   }
 

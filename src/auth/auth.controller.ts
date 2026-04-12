@@ -63,4 +63,11 @@ export class AuthController {
   ) {
     return await this.authService.changePassword(user_id, changePasswordDto);
   }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('logout')
+  @ApiOperation({ summary: 'Logout user' })
+  async logout(@ActiveUser('sub') user_id: string) {
+    return await this.authService.logout(user_id);
+  }
 }

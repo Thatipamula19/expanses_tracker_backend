@@ -233,7 +233,7 @@ export class AuthService {
       select: ['id', 'email', 'password', 'user_name'],
     });
     if (!user) {
-      throw new UnauthorizedException('User not found');
+      throw new NotFoundException(`user with id ${user_id} not found`);
     }
 
     const isMatch = await this.hashingProvider.comparePassword(
@@ -242,7 +242,7 @@ export class AuthService {
     );
 
     if (!isMatch) {
-      throw new UnauthorizedException('Old password is incorrect');
+      throw new NotFoundException('old password is incorrect');
     }
 
     await this.userRepository.update(user.id, {

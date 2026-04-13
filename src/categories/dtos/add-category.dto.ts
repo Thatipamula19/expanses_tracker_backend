@@ -6,4 +6,9 @@ export class AddCategoryDto {
   @IsNotEmpty({ message: 'Category Name is required' })
   @IsString({ message: 'Category Name must be a string' })
   name: string;
+
+  @ApiProperty({ description: 'icon name' })
+  @IsNotEmpty({ message: 'icon is required' })
+  @IsString({ message: 'icon must be a string' })
+  icon?: string;
 }

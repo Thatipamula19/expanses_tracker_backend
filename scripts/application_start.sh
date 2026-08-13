@@ -6,7 +6,7 @@ APP_DIR="/var/www/nestjs-build"
 
 cd "$APP_DIR"
 
-npm ci --omit=dev
+# npm ci --omit=dev
 
 npx prisma generate
 

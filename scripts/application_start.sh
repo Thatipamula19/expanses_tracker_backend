@@ -27,7 +27,7 @@ echo "Starting NestJS..."
 
 pm2 delete nestjs-build || true
 
-pm2 start dist/main.js --name nestjs-build
+pm2 start npm --name nestjs-build -- run start:prod
 
 pm2 save
 

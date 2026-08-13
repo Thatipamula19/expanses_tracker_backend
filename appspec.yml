@@ -1,3 +1,9 @@
+version: 0.0
+
+files:
+  - source: /
+    destination: /var/www/nestjs-build
+
 hooks:
   ApplicationStop:
     - location: scripts/application_stop.sh

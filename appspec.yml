@@ -1,14 +1,8 @@
-version: 0.0
-
-files:
-  - source: /
-    destination: /var/www/nestjs-build
-
 hooks:
   ApplicationStop:
     - location: scripts/application_stop.sh
       timeout: 300
-      runas: root
+      runas: ec2-user
 
   BeforeInstall:
     - location: scripts/before_install.sh
@@ -18,9 +12,9 @@ hooks:
   ApplicationStart:
     - location: scripts/application_start.sh
       timeout: 300
-      runas: root
+      runas: ec2-user
 
   ValidateService:
     - location: scripts/validate_service.sh
       timeout: 300
-      runas: root
+      runas: ec2-user

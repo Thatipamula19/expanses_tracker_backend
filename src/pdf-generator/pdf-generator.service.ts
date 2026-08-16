@@ -13,7 +13,7 @@ export class PdfGeneratorService {
 
             browser = await puppeteer.launch({
                 headless: true,
-                executablePath: '/usr/bin/chromium-browser',
+                executablePath: '/usr/bin/google-chrome',
                 args: [
                     '--allow-file-access-from-files',
                     '--enable-local-file-accesses',
@@ -56,7 +56,8 @@ export class PdfGeneratorService {
 
             browser = await puppeteer.launch({
                 headless: true,
-                executablePath: '/usr/bin/chromium-browser',
+                // executablePath: '/usr/bin/chromium-browser',
+                executablePath: '/usr/bin/google-chrome',
                 args: [
                     '--allow-file-access-from-files',
                     '--enable-local-file-accesses',

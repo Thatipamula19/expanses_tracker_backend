@@ -22,6 +22,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { AuthorizeGuard } from './auth/guards/authorize.guard';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { CacheModule } from '@nestjs/cache-manager';
+import { PdfGeneratorModule } from './pdf-generator/pdf-generator.module';
 import * as redisStore from 'cache-manager-redis-store';
 @Module({
   imports: [
@@ -75,7 +76,8 @@ import * as redisStore from 'cache-manager-redis-store';
       port: process.env.REDIS_PORT || 6379,
       password: process.env.REDIS_PASSWORD || undefined,
       ttl: 60, // seconds — default cache lifetime
-    })
+    }),
+    PdfGeneratorModule
   ],
   controllers: [AppController],
   providers: [
